@@ -1158,7 +1158,15 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
                   onChange={(e) => { if (e.target.value.length <= 10000) setWorkPromptContent(e.target.value); }}
                   className="settings-input"
                   style={{ width: '100%', minHeight: '300px', height: '100%', resize: 'none', fontFamily: 'inherit', fontSize: '13px', lineHeight: '1.5' }}
-                  placeholder={lang === 'zh' ? '例如：\n你是一个专业的助手，请注意以下几点：\n1. 回复要简洁友好\n2. 遇到问题先询问具体情况\n3. 无法解决的问题，引导用户联系人工' : 'e.g. You are a professional assistant...'}
+                  placeholder={
+                    lang === 'zh'
+                      ? workPromptConnectorId === 'feishu'
+                        ? '例如：\n你是公司的AI助理，帮助员工处理日常工作：\n1. 协助撰写文档、邮件和报告\n2. 回答公司制度和流程相关问题\n3. 帮助整理会议纪要和待办事项'
+                        : workPromptConnectorId === 'smart-kf'
+                          ? '例如：\n你是AI客服，请注意以下几点：\n1. 回复要简洁友好，不超过200字\n2. 遇到技术问题，先询问具体情况再给建议\n3. 无法解决的问题，引导用户联系人工客服\n4. 回答前先读取 ~/knowledge-base/ 文件夹中的文档作为参考'
+                          : '例如：\n你是公司的AI助理，帮助员工处理日常工作：\n1. 协助撰写文档、方案和总结\n2. 回答公司业务和流程相关问题\n3. 帮助分析数据和生成报表'
+                      : 'e.g. You are a professional assistant...'
+                  }
                   autoFocus
                 />
               </div>
