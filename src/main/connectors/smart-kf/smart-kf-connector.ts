@@ -309,9 +309,17 @@ export class SmartKfConnector implements Connector {
         if (first) this.processedMessages.delete(first);
       }
 
-      // 跳过事件类型消息（如用户进入会话等）
+      // 处理事件类型消息（如用户进入会话等）
       if (msg.msgtype === 'event') {
-        console.log('[SmartKfConnector] 📌 跳过事件消息:', msg.event?.event_type);
+        console.log('[SmartKfConnector] 📌 收到事件消息:', msg.event?.event_type);
+        // 检查是否有 welcome_code，有则自动发送欢迎语
+        const welcomeCode = msg.event?.welcome_code;
+        const openKfId = msg.event?.open_kfid || msg.open_kfid || '';
+        if (welcomeCode && openKfId) {
+          this.handleWelcomeEvent(welcomeCode, openKfId).catch((err) => {
+            console.error('[SmartKfConnector] ❌ 发送欢迎语失败:', getErrorMessage(err));
+          });
+        }
         return;
       }
 
@@ -461,6 +469,114 @@ export class SmartKfConnector implements Connector {
     const tempDir = path.join(settings.workspaceDir, '.deepbot', 'temp', 'uploads');
     ensureDirectoryExists(tempDir);
     return tempDir;
+  }
+
+  /**
+   * 处理欢迎语事件：从配置中读取欢迎语并发送
+   */
+  private async handleWelcomeEvent(welcomeCode: string, openKfId: string): Promise<void> {
+    // 从数据库读取该客服的欢迎语配置
+    const store = SystemConfigStore.getInstance();
+    const welcomeText = store.getAppSetting(`smart_kf_welcome_${openKfId}`);
+
+    if (!welcomeText) {
+      console.log('[SmartKfConnector] 📌 该客服未配置欢迎语，跳过:', openKfId);
+      return;
+    }
+
+    console.log('[SmartKfConnector] 📨 发送欢迎语:', { openKfId, welcomeCode: welcomeCode.substring(0, 16) + '...' });
+
+    // 通过 WebSocket 通知服务端调用 send_msg_on_event 接口
+    const result = await this.sendWelcomeMessage(welcomeCode, welcomeText);
+    if (result.success) {
+      console.log('[SmartKfConnector] ✅ 欢迎语已发送');
+    } else {
+      console.error('[SmartKfConnector] ❌ 欢迎语发送失败:', result.error);
+    }
+  }
+
+  /**
+   * 获取客服账号列表
+   */
+  async getKfList(): Promise<{ success: boolean; accountList?: Array<{ open_kfid: string; name: string; avatar: string }>; error?: string }> {
+    if (!this.ws || this.ws.readyState !== 1) {
+      return { success: false, error: 'WebSocket 未连接' };
+    }
+
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        this.ws?.removeListener('message', handler);
+        resolve({ success: false, error: '获取客服列表超时' });
+      }, 10000);
+
+      const handler = (data: any) => {
+        try {
+          const msg = JSON.parse(data.toString());
+          if (msg.type === 'kf_list') {
+            clearTimeout(timeout);
+            this.ws?.removeListener('message', handler);
+            resolve({
+              success: true,
+              accountList: msg.account_list || [],
+            });
+          }
+        } catch {
+          // 非相关消息，忽略
+        }
+      };
+
+      this.ws.on('message', handler);
+      this.ws.send(JSON.stringify({ type: 'get_kf_list' }));
+    });
+  }
+
+  /**
+   * 发送事件响应消息（欢迎语）
+   * 
+   * 服务端接口格式：
+   * { type: "send_welcome", code: "xxx", content: "欢迎语文本", request_id: "req_xxx" }
+   */
+  async sendWelcomeMessage(code: string, content: string): Promise<{ success: boolean; error?: string }> {
+    if (!this.ws || this.ws.readyState !== 1) {
+      return { success: false, error: 'WebSocket 未连接' };
+    }
+
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+    return new Promise((resolve) => {
+      const timeout = setTimeout(() => {
+        this.ws?.removeListener('message', handler);
+        // 超时视为成功（兼容旧版服务端）
+        resolve({ success: true });
+      }, 15000);
+
+      const handler = (data: any) => {
+        try {
+          const msg = JSON.parse(data.toString());
+          // 匹配 request_id
+          if (msg.request_id && msg.request_id !== requestId) return;
+          if (msg.type === 'welcome_sent' || msg.type === 'welcome_error') {
+            clearTimeout(timeout);
+            this.ws?.removeListener('message', handler);
+            if (msg.type === 'welcome_error') {
+              resolve({ success: false, error: msg.error || '发送欢迎语失败' });
+            } else {
+              resolve({ success: true });
+            }
+          }
+        } catch {
+          // 非相关消息，忽略
+        }
+      };
+
+      this.ws.on('message', handler);
+      this.ws.send(JSON.stringify({
+        type: 'send_welcome',
+        code,
+        content,
+        request_id: requestId,
+      }));
+    });
   }
 
   /**

@@ -289,6 +289,30 @@ export const api = {
     return webClient.post('/api/connectors/direct-reply', { tabId, content });
   },
 
+  // 获取智能客服账号列表
+  async connectorGetKfList(): Promise<any> {
+    if (isElectron()) return (window as any).deepbot.connectorGetKfList();
+    return webClient.get('/api/connectors/smart-kf/kf-list');
+  },
+
+  // 保存客服欢迎语配置
+  async connectorSaveKfWelcome(openKfId: string, welcome: string): Promise<any> {
+    if (isElectron()) return (window as any).deepbot.connectorSaveKfWelcome(openKfId, welcome);
+    return webClient.post('/api/connectors/smart-kf/kf-welcome', { openKfId, welcome });
+  },
+
+  // 获取客服欢迎语配置
+  async connectorGetKfWelcome(openKfId: string): Promise<any> {
+    if (isElectron()) return (window as any).deepbot.connectorGetKfWelcome(openKfId);
+    return webClient.get(`/api/connectors/smart-kf/kf-welcome?openKfId=${encodeURIComponent(openKfId)}`);
+  },
+
+  // 保存客服工作提示词（同步到所有 Tab）
+  async connectorSaveKfWorkPrompt(openKfId: string, workPrompt: string): Promise<any> {
+    if (isElectron()) return (window as any).deepbot.connectorSaveKfWorkPrompt(openKfId, workPrompt);
+    return webClient.post('/api/connectors/smart-kf/kf-work-prompt', { openKfId, workPrompt });
+  },
+
   async setTabModelConfig(tabId: string, modelConfig: any): Promise<any> {
     if (isElectron()) return (window as any).deepbot.setTabModelConfig(tabId, modelConfig);
     return webClient.post(`/api/tabs/${tabId}/model-config`, { modelConfig });

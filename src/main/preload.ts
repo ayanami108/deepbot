@@ -75,6 +75,10 @@ const IPC_CHANNELS = {
   CONNECTOR_CREATE_WECOM: 'connector:create-wecom',
   CONNECTOR_REMOVE_WECOM: 'connector:remove-wecom',
   CONNECTOR_DIRECT_REPLY: 'connector:direct-reply',
+  CONNECTOR_GET_KF_LIST: 'connector:get-kf-list',
+  CONNECTOR_SAVE_KF_WELCOME: 'connector:save-kf-welcome',
+  CONNECTOR_GET_KF_WELCOME: 'connector:get-kf-welcome',
+  CONNECTOR_SAVE_KF_WORK_PROMPT: 'connector:save-kf-work-prompt',
   GET_TAB_REPLY_MODE: 'tab:get-reply-mode',
   SET_TAB_REPLY_MODE: 'tab:set-reply-mode',
   SET_TAB_MODEL_CONFIG: 'tab:set-model-config',
@@ -398,6 +402,26 @@ contextBridge.exposeInMainWorld('deepbot', {
   // 人工直接回复连接器消息
   connectorDirectReply: (tabId: string, content: string) => {
     return ipcRenderer.invoke(IPC_CHANNELS.CONNECTOR_DIRECT_REPLY, { tabId, content });
+  },
+
+  // 获取智能客服账号列表
+  connectorGetKfList: () => {
+    return ipcRenderer.invoke(IPC_CHANNELS.CONNECTOR_GET_KF_LIST);
+  },
+
+  // 保存客服欢迎语配置
+  connectorSaveKfWelcome: (openKfId: string, welcome: string) => {
+    return ipcRenderer.invoke(IPC_CHANNELS.CONNECTOR_SAVE_KF_WELCOME, { openKfId, welcome });
+  },
+
+  // 获取客服欢迎语配置
+  connectorGetKfWelcome: (openKfId: string) => {
+    return ipcRenderer.invoke(IPC_CHANNELS.CONNECTOR_GET_KF_WELCOME, { openKfId });
+  },
+
+  // 保存客服工作提示词（同步到所有 Tab）
+  connectorSaveKfWorkPrompt: (openKfId: string, workPrompt: string) => {
+    return ipcRenderer.invoke(IPC_CHANNELS.CONNECTOR_SAVE_KF_WORK_PROMPT, { openKfId, workPrompt });
   },
 
   setTabModelConfig: (tabId: string, modelConfig: any) => {

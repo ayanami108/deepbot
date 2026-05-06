@@ -71,12 +71,47 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
   const [wecomConfigs, setWecomConfigs] = useState<Record<string, { botId: string; secret: string; botName?: string }>>({});
   const [showFeishuWorkPrompt, setShowFeishuWorkPrompt] = useState(false);
   const [feishuDefaultWorkPrompt, setFeishuDefaultWorkPrompt] = useState('');
+  // 智能客服账号列表
+  const [kfAccountList, setKfAccountList] = useState<Array<{ open_kfid: string; name: string; avatar: string }>>([]);
+  const [kfListLoading, setKfListLoading] = useState(false);
+  const [showKfWelcomePrompt, setShowKfWelcomePrompt] = useState(false);
+  const [kfWelcomeOpenKfId, setKfWelcomeOpenKfId] = useState('');
+  const [kfWelcomeName, setKfWelcomeName] = useState('');
+  const [kfWelcomeContent, setKfWelcomeContent] = useState('');
 
   useEffect(() => {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
     loadConnectors();
   }, []);
+
+  // 智能客服连接器启动后自动获取客服列表
+  const loadKfList = async () => {
+    setKfListLoading(true);
+    try {
+      const result = await api.connectorGetKfList();
+      const actualResult = result?.data || result;
+      if (actualResult?.success && actualResult.accountList) {
+        setKfAccountList(actualResult.accountList);
+      } else {
+        setKfAccountList([]);
+      }
+    } catch {
+      setKfAccountList([]);
+    } finally {
+      setKfListLoading(false);
+    }
+  };
+
+  // 当选中 smart-kf 且连接器已启动时，自动加载客服列表
+  useEffect(() => {
+    if (selectedConnector === 'smart-kf') {
+      const smartKf = connectors.find(c => c.id === 'smart-kf');
+      if (smartKf?.enabled) {
+        loadKfList();
+      }
+    }
+  }, [selectedConnector, connectors]);
 
   const loadConnectors = async (preserveSelection = false) => {
     try {
@@ -264,6 +299,10 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
           const hr = await api.connectorHealthCheck(connectorId);
           const ah = (hr as any).data || hr;
           setConnectorHealthMap(prev => ({ ...prev, [connectorId]: ah.status === 'healthy' ? 'healthy' : 'unhealthy' }));
+          // 智能客服启动成功后自动获取客服列表
+          if (connectorId === 'smart-kf' && ah.status === 'healthy') {
+            loadKfList();
+          }
         } catch {
           setConnectorHealthMap(prev => ({ ...prev, [connectorId]: 'unhealthy' }));
         }
@@ -820,21 +859,19 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
       <div className="space-y-2">
         <div className="flex items-center justify-between">
           <label className="block text-sm font-medium text-gray-700">API URL <span className="text-red-500">*</span></label>
-          <button
-            onClick={async () => {
-              try {
-                const result = await api.getAppSetting('smart_kf_default_work_prompt');
-                setSmartKfDefaultWorkPrompt(result?.value || '');
-              } catch {
-                setSmartKfDefaultWorkPrompt('');
-              }
-              setShowSmartKfWorkPrompt(true);
-            }}
-            className="skill-card-action flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors"
-          >
-            <FileText size={12} />
-            <span>{lang === 'zh' ? '默认工作提示词' : 'Default Work Prompt'}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                await loadKfList();
+                showToast('success', lang === 'zh' ? '客服列表已刷新' : 'KF list refreshed');
+              }}
+              className="skill-card-action flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors"
+              disabled={kfListLoading || !connectors.find(c => c.id === 'smart-kf')?.enabled}
+            >
+              <span style={{ display: 'inline-block', animation: kfListLoading ? 'spin 1s linear infinite' : 'none' }}>🔄</span>
+              <span>{lang === 'zh' ? '刷新客服列表' : 'Refresh KF List'}</span>
+            </button>
+          </div>
         </div>
         <input type="text" value={smartKfConfig.wsUrl} onChange={(e) => setSmartKfConfig({ ...smartKfConfig, wsUrl: e.target.value })}
           placeholder="wss://your-service-url/webhook/ws/" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -849,6 +886,72 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
         {renderStartStopButtons('smart-kf')}
       </div>
 
+      {/* 客服账号列表 */}
+      {connectors.find(c => c.id === 'smart-kf')?.enabled && kfAccountList.length > 0 && (
+        <div className="space-y-2 pt-2">
+          <label className="block text-sm font-medium text-gray-700">{lang === 'zh' ? '客服账号列表' : 'KF Account List'}</label>
+          <div className="space-y-2">
+            {kfAccountList.map((kf) => (
+              <div key={kf.open_kfid} className="flex items-center justify-between p-3 border border-gray-200 rounded-md">
+                <div className="flex items-center gap-3">
+                  {kf.avatar && (
+                    <img src={kf.avatar} alt={kf.name} className="w-8 h-8 rounded-full" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  )}
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">{kf.name}</div>
+                    <div className="text-xs text-gray-400 font-mono">{kf.open_kfid}</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => {
+                      try {
+                        const result = await api.getAppSetting(`smart_kf_work_prompt_${kf.open_kfid}`);
+                        setSmartKfDefaultWorkPrompt(result?.value || '');
+                      } catch {
+                        setSmartKfDefaultWorkPrompt('');
+                      }
+                      setKfWelcomeOpenKfId(kf.open_kfid);
+                      setKfWelcomeName(kf.name);
+                      setShowSmartKfWorkPrompt(true);
+                    }}
+                    className="skill-card-action flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors"
+                  >
+                    <FileText size={12} />
+                    <span>{lang === 'zh' ? '工作提示词' : 'Work Prompt'}</span>
+                  </button>
+                  <button
+                    onClick={async () => {
+                      try {
+                        const result = await api.connectorGetKfWelcome(kf.open_kfid);
+                        const actualResult = result?.data || result;
+                        setKfWelcomeContent(actualResult?.value || '');
+                      } catch {
+                        setKfWelcomeContent('');
+                      }
+                      setKfWelcomeOpenKfId(kf.open_kfid);
+                      setKfWelcomeName(kf.name);
+                      setShowKfWelcomePrompt(true);
+                    }}
+                    className="skill-card-action flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors"
+                  >
+                    <FileText size={12} />
+                    <span>{lang === 'zh' ? '设置欢迎语' : 'Welcome Msg'}</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* 连接器已启动但客服列表为空 */}
+      {connectors.find(c => c.id === 'smart-kf')?.enabled && kfAccountList.length === 0 && !kfListLoading && (
+        <div className="text-center py-4 text-gray-400 text-sm">
+          {lang === 'zh' ? '暂无客服账号，请点击"刷新客服列表"获取' : 'No KF accounts found. Click "Refresh KF List" to fetch.'}
+        </div>
+      )}
+
       {/* 智能客服默认工作提示词弹窗 */}
       {showSmartKfWorkPrompt && (
         <div className="settings-overlay" onClick={() => setShowSmartKfWorkPrompt(false)}>
@@ -859,7 +962,7 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
           >
             <div className="settings-header">
               <h2 className="settings-title">
-                {lang === 'zh' ? '默认工作提示词' : 'Default Work Prompt'}
+                {lang === 'zh' ? `默认工作提示词 - ${kfWelcomeName}` : `Default Work Prompt - ${kfWelcomeName}`}
               </h2>
               <button className="settings-close-button" onClick={() => setShowSmartKfWorkPrompt(false)}>
                 <X size={20} />
@@ -870,8 +973,8 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
                 <h4 className="text-sm font-medium text-green-900 mb-2">{lang === 'zh' ? '💡 什么是默认工作提示词？' : '💡 What is Default Work Prompt?'}</h4>
                 <p className="text-sm text-green-800">
                   {lang === 'zh'
-                    ? '设置后，新创建的智能客服 Tab 会自动填入此提示词。用户可以在 Tab 右键菜单中修改覆盖。'
-                    : 'Once set, new Smart KF tabs will auto-fill this prompt. Users can override it via tab context menu.'}
+                    ? '设置后，该客服新创建的 Tab 会自动填入此提示词。用户可以在 Tab 右键菜单中修改覆盖。'
+                    : 'Once set, new tabs for this KF account will auto-fill this prompt. Users can override it via tab context menu.'}
                 </p>
               </div>
               <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
@@ -892,7 +995,7 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
                   {smartKfDefaultWorkPrompt && (
                     <button
                       onClick={async () => {
-                        await api.saveAppSetting('smart_kf_default_work_prompt', '');
+                        await api.connectorSaveKfWorkPrompt(kfWelcomeOpenKfId, '');
                         setShowSmartKfWorkPrompt(false);
                         showToast('success', lang === 'zh' ? '已清空默认工作提示词' : 'Default work prompt cleared');
                       }}
@@ -904,9 +1007,79 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
                   )}
                   <button
                     onClick={async () => {
-                      await api.saveAppSetting('smart_kf_default_work_prompt', smartKfDefaultWorkPrompt.trim());
+                      await api.connectorSaveKfWorkPrompt(kfWelcomeOpenKfId, smartKfDefaultWorkPrompt.trim());
                       setShowSmartKfWorkPrompt(false);
                       showToast('success', lang === 'zh' ? '默认工作提示词已保存' : 'Default work prompt saved');
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                  >
+                    {lang === 'zh' ? '保存配置' : 'Save Configuration'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 客服欢迎语设置弹窗 */}
+      {showKfWelcomePrompt && (
+        <div className="settings-overlay" onClick={() => setShowKfWelcomePrompt(false)}>
+          <div
+            className="settings-container tab-model-picker-container"
+            style={{ width: '700px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="settings-header">
+              <h2 className="settings-title">
+                {lang === 'zh' ? `设置欢迎语 - ${kfWelcomeName}` : `Welcome Message - ${kfWelcomeName}`}
+              </h2>
+              <button className="settings-close-button" onClick={() => setShowKfWelcomePrompt(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
+              <div className="settings-alert settings-alert-success" style={{ marginBottom: '12px', flexShrink: 0 }}>
+                <h4 className="text-sm font-medium text-green-900 mb-2">{lang === 'zh' ? '💡 什么是欢迎语？' : '💡 What is Welcome Message?'}</h4>
+                <p className="text-sm text-green-800">
+                  {lang === 'zh'
+                    ? '当用户首次进入客服会话时（48小时内未收过欢迎语且未发过消息），系统会自动发送此欢迎语。留空则不发送欢迎语。'
+                    : 'When a user enters the KF session for the first time (no welcome message received and no message sent in 48 hours), this welcome message will be sent automatically. Leave empty to disable.'}
+                </p>
+              </div>
+              <div style={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
+                <textarea
+                  value={kfWelcomeContent}
+                  onChange={(e) => { if (e.target.value.length <= 2048) setKfWelcomeContent(e.target.value); }}
+                  className="settings-input"
+                  style={{ width: '100%', minHeight: '300px', height: '100%', resize: 'none', fontFamily: 'inherit', fontSize: '13px', lineHeight: '1.5' }}
+                  placeholder={lang === 'zh' ? '例如：你好！我是AI客服，有什么可以帮您？' : 'e.g. Hello! I am an AI assistant, how can I help you?'}
+                  autoFocus
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '12px', borderTop: '1px solid var(--settings-border, #e5e7eb)', marginTop: '12px', flexShrink: 0 }}>
+                <span style={{ fontSize: '12px', color: 'var(--terminal-text-dim, #999)' }}>
+                  {kfWelcomeContent.length} / 2048
+                </span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  {kfWelcomeContent && (
+                    <button
+                      onClick={async () => {
+                        await api.connectorSaveKfWelcome(kfWelcomeOpenKfId, '');
+                        setShowKfWelcomePrompt(false);
+                        showToast('success', lang === 'zh' ? '已清空欢迎语' : 'Welcome message cleared');
+                      }}
+                      className="skill-icon-button"
+                      style={{ padding: '8px 20px', fontSize: '13px' }}
+                    >
+                      {lang === 'zh' ? '清空' : 'Clear'}
+                    </button>
+                  )}
+                  <button
+                    onClick={async () => {
+                      await api.connectorSaveKfWelcome(kfWelcomeOpenKfId, kfWelcomeContent.trim());
+                      setShowKfWelcomePrompt(false);
+                      showToast('success', lang === 'zh' ? '欢迎语已保存' : 'Welcome message saved');
                     }}
                     className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
                   >

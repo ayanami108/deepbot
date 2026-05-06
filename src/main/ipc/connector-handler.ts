@@ -482,4 +482,84 @@ export function registerConnectorHandlers(): void {
       }
     }
   );
+
+  // 获取智能客服账号列表
+  registerIpcHandler<void, { success: boolean; accountList?: Array<{ open_kfid: string; name: string; avatar: string }>; error?: string }>(
+    IPC_CHANNELS.CONNECTOR_GET_KF_LIST,
+    async (): Promise<{ success: boolean; accountList?: Array<{ open_kfid: string; name: string; avatar: string }>; error?: string }> => {
+      try {
+        if (!gateway) throw new Error('Gateway 未初始化');
+        const connectorManager = gateway.getConnectorManager();
+        const connector = connectorManager.getConnector('smart-kf') as any;
+        if (!connector) throw new Error('智能客服连接器未注册');
+        if (!connector.getKfList) throw new Error('连接器不支持获取客服列表');
+        const result = await connector.getKfList();
+        return result;
+      } catch (error) {
+        console.error('[IPC] 获取客服列表失败:', error);
+        return { success: false, error: getErrorMessage(error) };
+      }
+    }
+  );
+
+  // 保存客服欢迎语配置
+  registerIpcHandler<{ openKfId: string; welcome: string }, { success: boolean; error?: string }>(
+    IPC_CHANNELS.CONNECTOR_SAVE_KF_WELCOME,
+    async (_event, request): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const store = SystemConfigStore.getInstance();
+        store.setAppSetting(`smart_kf_welcome_${request.openKfId}`, request.welcome);
+        return { success: true };
+      } catch (error) {
+        console.error('[IPC] 保存客服欢迎语失败:', error);
+        return { success: false, error: getErrorMessage(error) };
+      }
+    }
+  );
+
+  // 获取客服欢迎语配置
+  registerIpcHandler<{ openKfId: string }, { success: boolean; value: string | null; error?: string }>(
+    IPC_CHANNELS.CONNECTOR_GET_KF_WELCOME,
+    async (_event, request): Promise<{ success: boolean; value: string | null; error?: string }> => {
+      try {
+        const store = SystemConfigStore.getInstance();
+        const value = store.getAppSetting(`smart_kf_welcome_${request.openKfId}`);
+        return { success: true, value };
+      } catch (error) {
+        console.error('[IPC] 获取客服欢迎语失败:', error);
+        return { success: false, value: null, error: getErrorMessage(error) };
+      }
+    }
+  );
+
+  // 保存客服工作提示词（同步到所有该客服的 Tab）
+  registerIpcHandler<{ openKfId: string; workPrompt: string }, { success: boolean; error?: string }>(
+    IPC_CHANNELS.CONNECTOR_SAVE_KF_WORK_PROMPT,
+    async (_event, request): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const store = SystemConfigStore.getInstance();
+        const trimmed = request.workPrompt ? request.workPrompt.substring(0, 10000) : '';
+        store.setAppSetting(`smart_kf_work_prompt_${request.openKfId}`, trimmed);
+
+        // 同步到所有该客服的 Tab
+        if (gateway) {
+          const { updateTabWorkPrompt } = require('../database/tab-config');
+          const db = store.getDb();
+          const tabManager = gateway.getTabManager();
+          const allTabs = tabManager.getAllTabs();
+          for (const tab of allTabs) {
+            if (tab.connectorId === 'smart-kf' && tab.conversationId?.split('||')[1] === request.openKfId) {
+              updateTabWorkPrompt(db, tab.id, trimmed || null);
+              gateway.invalidateSessionSystemPrompt(tab.id);
+            }
+          }
+        }
+
+        return { success: true };
+      } catch (error) {
+        console.error('[IPC] 保存客服工作提示词失败:', error);
+        return { success: false, error: getErrorMessage(error) };
+      }
+    }
+  );
 }

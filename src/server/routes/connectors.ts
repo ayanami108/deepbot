@@ -200,6 +200,55 @@ export function createConnectorsRouter(gatewayAdapter: GatewayAdapter): Router {
   };
   
   router.get('/', getAllConnectors);
+  
+  // 智能客服专用路由（必须在 /:connectorId 通配符之前注册）
+  const getKfList: RequestHandler = async (req, res) => {
+    try {
+      const result = await gatewayAdapter.connectorGetKfList();
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: getErrorMessage(error) });
+    }
+  };
+
+  const saveKfWelcome: RequestHandler = async (req, res) => {
+    try {
+      const { openKfId, welcome } = req.body;
+      if (!openKfId) { res.status(400).json({ success: false, error: '缺少 openKfId' }); return; }
+      const result = await gatewayAdapter.connectorSaveKfWelcome(openKfId, welcome || '');
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: getErrorMessage(error) });
+    }
+  };
+
+  const getKfWelcome: RequestHandler = async (req, res) => {
+    try {
+      const openKfId = req.query.openKfId as string;
+      if (!openKfId) { res.status(400).json({ success: false, error: '缺少 openKfId' }); return; }
+      const result = await gatewayAdapter.connectorGetKfWelcome(openKfId);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: getErrorMessage(error) });
+    }
+  };
+
+  const saveKfWorkPrompt: RequestHandler = async (req, res) => {
+    try {
+      const { openKfId, workPrompt } = req.body;
+      if (!openKfId) { res.status(400).json({ success: false, error: '缺少 openKfId' }); return; }
+      const result = await gatewayAdapter.connectorSaveKfWorkPrompt(openKfId, workPrompt || '');
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: getErrorMessage(error) });
+    }
+  };
+
+  router.get('/smart-kf/kf-list', getKfList);
+  router.post('/smart-kf/kf-welcome', saveKfWelcome);
+  router.get('/smart-kf/kf-welcome', getKfWelcome);
+  router.post('/smart-kf/kf-work-prompt', saveKfWorkPrompt);
+
   router.get('/:connectorId/config', getConnectorConfig);
   router.post('/:connectorId/config', saveConnectorConfig);
   router.post('/:connectorId/start', startConnector);

@@ -560,6 +560,49 @@ export class GatewayAdapter extends EventEmitter {
     const records = store.getAllPairingRecords();
     return { success: true, records };
   }
+
+  async connectorGetKfList(): Promise<any> {
+    const connectorManager = this.gateway.getConnectorManager();
+    const connector = connectorManager.getConnector('smart-kf') as any;
+    if (!connector) return { success: false, error: '智能客服连接器未注册' };
+    if (!connector.getKfList) return { success: false, error: '连接器不支持获取客服列表' };
+    return await connector.getKfList();
+  }
+
+  async connectorSaveKfWelcome(openKfId: string, welcome: string): Promise<any> {
+    const { SystemConfigStore } = await import('../main/database/system-config-store');
+    const store = SystemConfigStore.getInstance();
+    store.setAppSetting(`smart_kf_welcome_${openKfId}`, welcome);
+    return { success: true };
+  }
+
+  async connectorGetKfWelcome(openKfId: string): Promise<any> {
+    const { SystemConfigStore } = await import('../main/database/system-config-store');
+    const store = SystemConfigStore.getInstance();
+    const value = store.getAppSetting(`smart_kf_welcome_${openKfId}`);
+    return { success: true, value };
+  }
+
+  async connectorSaveKfWorkPrompt(openKfId: string, workPrompt: string): Promise<any> {
+    const { SystemConfigStore } = await import('../main/database/system-config-store');
+    const { updateTabWorkPrompt } = await import('../main/database/tab-config');
+    const store = SystemConfigStore.getInstance();
+    const trimmed = workPrompt ? workPrompt.substring(0, 10000) : '';
+    store.setAppSetting(`smart_kf_work_prompt_${openKfId}`, trimmed);
+
+    // 同步到所有该客服的 Tab
+    const db = store.getDb();
+    const tabManager = this.gateway.getTabManager();
+    const allTabs = tabManager.getAllTabs();
+    for (const tab of allTabs) {
+      if (tab.connectorId === 'smart-kf' && tab.conversationId?.split('||')[1] === openKfId) {
+        updateTabWorkPrompt(db, tab.id, trimmed || null);
+        this.gateway.invalidateSessionSystemPrompt(tab.id);
+      }
+    }
+
+    return { success: true };
+  }
   
   /**
    * 定时任务

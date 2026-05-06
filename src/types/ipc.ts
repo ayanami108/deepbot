@@ -113,6 +113,10 @@ export const IPC_CHANNELS = {
   CONNECTOR_CREATE_WECOM: 'connector:create-wecom',     // 创建企业微信实例
   CONNECTOR_REMOVE_WECOM: 'connector:remove-wecom',     // 删除企业微信实例
   CONNECTOR_DIRECT_REPLY: 'connector:direct-reply',     // 人工直接回复连接器消息
+  CONNECTOR_GET_KF_LIST: 'connector:get-kf-list',       // 获取智能客服账号列表
+  CONNECTOR_SAVE_KF_WELCOME: 'connector:save-kf-welcome', // 保存客服欢迎语配置
+  CONNECTOR_GET_KF_WELCOME: 'connector:get-kf-welcome',   // 获取客服欢迎语配置
+  CONNECTOR_SAVE_KF_WORK_PROMPT: 'connector:save-kf-work-prompt', // 保存客服工作提示词（同步到所有 Tab）
   
   // Tab 回复模式
   GET_TAB_REPLY_MODE: 'tab:get-reply-mode',
