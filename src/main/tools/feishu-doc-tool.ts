@@ -93,7 +93,7 @@ async function getLarkClient(): Promise<any> {
 
   const connectorConfig = configStoreInstance.getConnectorConfig('feishu');
   if (!connectorConfig?.config?.appId || !connectorConfig?.config?.appSecret) {
-    throw new Error('飞书连接器未配置，请先通过 api_set_feishu_connector_config 设置 appId 和 appSecret');
+    throw new Error('飞书连接器未配置，请先在系统设置中配置飞书连接器的 appId 和 appSecret');
   }
 
   // 用 appId+appSecret 作为缓存 key，配置变更时自动重建

@@ -68,35 +68,76 @@ export function formatGetConfigResult(result: any): string {
   if (result.connectors !== undefined) {
     message += `📡 外部通讯配置：\n`;
     
-    // 定义所有支持的连接器（目前只有飞书）
-    const supportedConnectors = [
-      { id: 'feishu', name: '飞书' },
-    ];
-    
     if (result.connectors && result.connectors.length > 0) {
-      // 创建已配置连接器的映射
-      const configuredMap = new Map<string, any>(
-        result.connectors.map((c: any) => [c.connectorId, c])
-      );
-      
-      // 显示所有支持的连接器
-      for (const connector of supportedConnectors) {
-        const config = configuredMap.get(connector.id);
-        
-        if (config) {
-          message += `  • ${connector.name} (${connector.id}):\n`;
-          message += `    - 状态: ${config.enabled ? '✅ 已启用' : '⏸️ 已禁用'}\n`;
-          message += `    - App ID: ${config.config?.appId ? '已配置' : '未配置'}\n`;
-          message += `    - App Secret: ${config.config?.appSecret ? '已配置' : '未配置'}\n`;
+      // 按类型分组连接器
+      const connectorsByType = new Map<string, any[]>();
+      for (const c of result.connectors) {
+        // 按前缀归类：wecom/wecom-* → wecom, wechat/wechat-* → wechat, smart-kf → smart-kf
+        let type: string;
+        if (c.connectorId === 'wecom' || c.connectorId.startsWith('wecom-')) {
+          type = 'wecom';
+        } else if (c.connectorId === 'wechat' || c.connectorId.startsWith('wechat-')) {
+          type = 'wechat';
         } else {
-          message += `  • ${connector.name} (${connector.id}): ❌ 未配置\n`;
+          type = c.connectorId;
         }
+        if (!connectorsByType.has(type)) {
+          connectorsByType.set(type, []);
+        }
+        connectorsByType.get(type)!.push(c);
+      }
+      
+      // 飞书
+      const feishuConfigs = connectorsByType.get('feishu');
+      if (feishuConfigs && feishuConfigs.length > 0) {
+        const config = feishuConfigs[0];
+        message += `  • 飞书 (feishu):\n`;
+        message += `    - 状态: ${config.enabled ? '✅ 已启用' : '⏸️ 已禁用'}\n`;
+        message += `    - App ID: ${config.config?.appId ? '已配置' : '未配置'}\n`;
+        message += `    - App Secret: ${config.config?.appSecret ? '已配置' : '未配置'}\n`;
+      } else {
+        message += `  • 飞书 (feishu): ❌ 未配置\n`;
+      }
+      
+      // 企业微信（多实例）
+      const wecomConfigs = connectorsByType.get('wecom');
+      if (wecomConfigs && wecomConfigs.length > 0) {
+        const enabledCount = wecomConfigs.filter((c: any) => c.enabled).length;
+        message += `  • 企业微信 (wecom): 共 ${wecomConfigs.length} 个机器人配置，${enabledCount} 个已启用\n`;
+        for (const config of wecomConfigs) {
+          const botName = config.config?.botName || config.connectorId;
+          message += `    - ${botName}: ${config.enabled ? '✅ 已启用' : '⏸️ 已禁用'}\n`;
+        }
+      } else {
+        message += `  • 企业微信 (wecom): ❌ 未配置\n`;
+      }
+      
+      // 微信（多实例）
+      const wechatConfigs = connectorsByType.get('wechat');
+      if (wechatConfigs && wechatConfigs.length > 0) {
+        const enabledCount = wechatConfigs.filter((c: any) => c.enabled).length;
+        message += `  • 微信 (wechat): 共 ${wechatConfigs.length} 个连接，${enabledCount} 个已启用\n`;
+        for (const config of wechatConfigs) {
+          const name = config.config?.botName || config.connectorName || config.connectorId;
+          message += `    - ${name}: ${config.enabled ? '✅ 已启用' : '⏸️ 已禁用'}\n`;
+        }
+      } else {
+        message += `  • 微信 (wechat): ❌ 未配置\n`;
+      }
+      
+      // 智能客服
+      const smartCsConfigs = connectorsByType.get('smart-kf');
+      if (smartCsConfigs && smartCsConfigs.length > 0) {
+        const config = smartCsConfigs[0];
+        message += `  • 智能客服 (smart-kf): ${config.enabled ? '✅ 已启用' : '⏸️ 已禁用'}\n`;
+      } else {
+        message += `  • 智能客服 (smart-kf): ❌ 未配置\n`;
       }
     } else {
-      // 没有任何配置，显示所有支持的连接器为未配置
-      for (const connector of supportedConnectors) {
-        message += `  • ${connector.name} (${connector.id}): ❌ 未配置\n`;
-      }
+      message += `  • 飞书 (feishu): ❌ 未配置\n`;
+      message += `  • 企业微信 (wecom): ❌ 未配置\n`;
+      message += `  • 微信 (wechat): ❌ 未配置\n`;
+      message += `  • 智能客服 (smart-kf): ❌ 未配置\n`;
     }
     message += '\n';
   }

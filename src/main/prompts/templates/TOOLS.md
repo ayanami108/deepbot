@@ -445,8 +445,6 @@ cp ~/path/to/"my file.txt" ~/another/path/
 
 ### 工具列表
 - `api_get_config` - 获取系统配置
-- `api_set_image_generation_config` - 设置图片生成工具配置
-- `api_set_web_search_config` - 设置 Web 搜索工具配置
 - `api_get_session_file_path` - 获取当前 Tab 的 Session 文件路径
 - `api_get_name` - 获取智能体名字和用户称呼（当前 Tab 有独立名字时返回 Tab 的名字）
 - `api_set_name` - 设置智能体名字或用户称呼
@@ -468,12 +466,6 @@ cp ~/path/to/"my file.txt" ~/another/path/
 
 // 查询工作目录配置
 { "tool": "api_get_config", "configType": "workspace" }
-
-// 更新图片生成工具配置
-{ "tool": "api_set_image_generation_config", "model": "qwen-image-2.0-pro", "apiKey": "sk-xxx" }
-
-// 更新 Web 搜索工具配置
-{ "tool": "api_set_web_search_config", "provider": "qwen", "model": "qwen-max", "apiKey": "sk-xxx" }
 
 // 获取当前 Tab 的 Session 文件路径
 { "tool": "api_get_session_file_path" }

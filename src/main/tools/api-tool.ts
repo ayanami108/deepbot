@@ -72,28 +72,6 @@ export const apiToolPlugin: ToolPlugin = {
       //   },
       // },
       
-      // 设置图片生成工具配置
-      {
-        name: TOOL_NAMES.API_SET_IMAGE_GENERATION_CONFIG,
-        label: '设置图片生成工具配置',
-        description: '更新图片生成工具的配置。可以设置模型、API 地址、API Key',
-        parameters: schemas.SetImageGenerationConfigSchema,
-        execute: async (_toolCallId: string, args: any, signal?: AbortSignal) => {
-          return handlers.handleSetImageGenerationConfig(args, signal);
-        },
-      },
-      
-      // 设置 Web 搜索工具配置
-      {
-        name: TOOL_NAMES.API_SET_WEB_SEARCH_CONFIG,
-        label: '设置 Web 搜索工具配置',
-        description: '更新 Web 搜索工具的配置。可以设置提供商、模型、API 地址、API Key',
-        parameters: schemas.SetWebSearchConfigSchema,
-        execute: async (_toolCallId: string, args: any, signal?: AbortSignal) => {
-          return handlers.handleSetWebSearchConfig(args, signal);
-        },
-      },
-      
       // 启用/禁用内置工具（已屏蔽，只能通过系统设置界面手动操作）
       // {
       //   name: TOOL_NAMES.API_SET_TOOL_ENABLED,
@@ -104,28 +82,6 @@ export const apiToolPlugin: ToolPlugin = {
       //     return handlers.handleSetToolEnabled(args, signal);
       //   },
       // },
-
-      // 设置飞书连接器配置
-      {
-        name: TOOL_NAMES.API_SET_FEISHU_CONNECTOR_CONFIG,
-        label: '设置飞书连接器配置',
-        description: '配置飞书连接器。设置 App ID 和 App Secret。配置后需要启用才能使用',
-        parameters: schemas.SetFeishuConnectorConfigSchema,
-        execute: async (_toolCallId: string, args: any, signal?: AbortSignal) => {
-          return handlers.handleSetFeishuConnectorConfig(args, signal);
-        },
-      },
-      
-      // 启用/禁用连接器
-      {
-        name: TOOL_NAMES.API_SET_CONNECTOR_ENABLED,
-        label: '启用/禁用连接器',
-        description: '启用或禁用外部通讯连接器（飞书、微信等）。需要先配置连接器才能启用',
-        parameters: schemas.SetConnectorEnabledSchema,
-        execute: async (_toolCallId: string, args: any, signal?: AbortSignal) => {
-          return handlers.handleSetConnectorEnabled(args, signal);
-        },
-      },
       
       // 获取配对记录
       {
