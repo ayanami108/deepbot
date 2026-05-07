@@ -83,6 +83,7 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
   const [kfNameInputTitle, setKfNameInputTitle] = useState('');
   const [kfAvatarPath, setKfAvatarPath] = useState('');
   const [kfAvatarPreview, setKfAvatarPreview] = useState('');
+  const [kfAvatarRequired, setKfAvatarRequired] = useState(false);
   // 客服工作目录弹窗（通用：智能客服/企业微信/飞书）
   const [showKfWorkspaceDirs, setShowKfWorkspaceDirs] = useState(false);
   const [kfWorkspaceDirsOpenKfId, setKfWorkspaceDirsOpenKfId] = useState('');
@@ -164,11 +165,12 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
   };
 
   // 打开客服账号编辑弹窗
-  const openKfNameInput = (title: string, defaultValue: string, callback: (name: string, avatarPath?: string) => Promise<void> | void) => {
+  const openKfNameInput = (title: string, defaultValue: string, callback: (name: string, avatarPath?: string) => Promise<void> | void, avatarRequired = false) => {
     setKfNameInputTitle(title);
     setKfNameInputValue(defaultValue);
     setKfAvatarPath('');
     setKfAvatarPreview('');
+    setKfAvatarRequired(avatarRequired);
     setKfNameInputCallback(() => callback);
     setShowKfNameInput(true);
   };
@@ -913,7 +915,8 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
                   } catch {
                     showToast('error', lang === 'zh' ? '添加失败' : 'Failed to add');
                   }
-                }
+                },
+                true
               )}
               className="skill-card-action flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors"
             >
@@ -1078,7 +1081,8 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
                   } catch {
                     showToast('error', lang === 'zh' ? '添加失败' : 'Failed to add');
                   }
-                }
+                },
+                true
               )}
               className="skill-card-action flex items-center gap-1 px-3 py-1.5 text-xs rounded transition-colors"
             >
@@ -1439,7 +1443,7 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
                   placeholder={lang === 'zh' ? '请输入客服名称' : 'Enter KF name'}
                   autoFocus
                   onKeyDown={async (e) => {
-                    if (e.key === 'Enter' && kfNameInputValue.trim()) {
+                    if (e.key === 'Enter' && kfNameInputValue.trim() && (!kfAvatarRequired || kfAvatarPath)) {
                       setShowKfNameInput(false);
                       showToast('success', lang === 'zh' ? '保存中...' : 'Saving...', { duration: 30000 });
                       await kfNameInputCallback?.(kfNameInputValue.trim(), kfAvatarPath || undefined);
@@ -1448,7 +1452,7 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
                 />
               </div>
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">{lang === 'zh' ? '客服头像' : 'Avatar'}</label>
+                <label className="block text-sm font-medium text-gray-700">{lang === 'zh' ? '客服头像' : 'Avatar'}{kfAvatarRequired && <span className="text-red-500"> *</span>}</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
@@ -1516,11 +1520,15 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
                 <button
                   onClick={async () => {
                     if (!kfNameInputValue.trim()) return;
+                    if (kfAvatarRequired && !kfAvatarPath) {
+                      showToast('error', lang === 'zh' ? '请选择客服头像' : 'Please select an avatar');
+                      return;
+                    }
                     setShowKfNameInput(false);
                     showToast('success', lang === 'zh' ? '保存中...' : 'Saving...', { duration: 30000 });
                     await kfNameInputCallback?.(kfNameInputValue.trim(), kfAvatarPath || undefined);
                   }}
-                  disabled={!kfNameInputValue.trim()}
+                  disabled={!kfNameInputValue.trim() || (kfAvatarRequired && !kfAvatarPath)}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
                   {lang === 'zh' ? '保存' : 'Save'}
