@@ -1327,7 +1327,22 @@ Use the file_read tool to read the file content.`
         logger.info(`✅ 新 Tab ${newTabId} 使用工作提示词 (openKfId: ${openKfId || 'global'})`);
       }
 
-      // 模型配置、Skill 白名单、工作目录：从同客服的已有 Tab 继承
+      // 工作目录：从 app setting 读取（按客服配置）
+      if (openKfId) {
+        const workspaceDirsJson = store.getAppSetting(`smart_kf_workspace_dirs_${openKfId}`);
+        if (workspaceDirsJson) {
+          try {
+            const dirs = JSON.parse(workspaceDirsJson);
+            if (Array.isArray(dirs) && dirs.length > 0) {
+              const { updateTabWorkspaceDirs } = require('./database/tab-config');
+              updateTabWorkspaceDirs(db, newTabId, dirs);
+              logger.info(`✅ 新 Tab ${newTabId} 使用工作目录 (openKfId: ${openKfId})`);
+            }
+          } catch { /* JSON 解析失败，忽略 */ }
+        }
+      }
+
+      // 模型配置、Skill 白名单：从同客服的已有 Tab 继承
       const allTabs = this.tabManager!.getAllTabs();
       const siblingTab = allTabs.find(t =>
         t.id !== newTabId &&
@@ -1345,11 +1360,6 @@ Use the file_read tool to read the file content.`
             updateTabSkillWhitelist(db, newTabId, siblingConfig.skillWhitelist);
             logger.info(`✅ 新 Tab ${newTabId} 继承 Skill 白名单 (来自 ${siblingTab.id})`);
           }
-          if (siblingConfig.workspaceDirs && siblingConfig.workspaceDirs.length > 0) {
-            const { updateTabWorkspaceDirs } = require('./database/tab-config');
-            updateTabWorkspaceDirs(db, newTabId, siblingConfig.workspaceDirs);
-            logger.info(`✅ 新 Tab ${newTabId} 继承工作目录 (来自 ${siblingTab.id})`);
-          }
         }
       }
     } catch (error) {
@@ -1359,8 +1369,7 @@ Use the file_read tool to read the file content.`
 
   /**
    * 企业微信/飞书 Tab 配置继承
-   * 工作提示词：统一从 app setting 读取
-   * 工作目录：从同 connectorId 的已有 Tab 继承
+   * 工作提示词、工作目录：统一从 app setting 读取
    */
   private inheritConnectorGroupConfig(newTabId: string, connectorId: string, defaultPromptKey: string): void {
     try {
@@ -1374,17 +1383,16 @@ Use the file_read tool to read the file content.`
         updateTabWorkPrompt(db, newTabId, workPrompt);
       }
 
-      // 工作目录：从同 connectorId 的已有 Tab 继承
-      const allTabs = this.tabManager!.getAllTabs();
-      const siblingTab = allTabs.find(t =>
-        t.id !== newTabId &&
-        t.connectorId === connectorId
-      );
-      if (siblingTab) {
-        const siblingConfig = store.getTabConfig(siblingTab.id);
-        if (siblingConfig?.workspaceDirs && siblingConfig.workspaceDirs.length > 0) {
-          updateTabWorkspaceDirs(db, newTabId, siblingConfig.workspaceDirs);
-        }
+      // 工作目录：从 app setting 读取
+      const workspaceDirsKey = connectorId === 'feishu' ? 'feishu_workspace_dirs' : `wecom_workspace_dirs_${connectorId}`;
+      const workspaceDirsJson = store.getAppSetting(workspaceDirsKey);
+      if (workspaceDirsJson) {
+        try {
+          const dirs = JSON.parse(workspaceDirsJson);
+          if (Array.isArray(dirs) && dirs.length > 0) {
+            updateTabWorkspaceDirs(db, newTabId, dirs);
+          }
+        } catch { /* JSON 解析失败，忽略 */ }
       }
     } catch (error) {
       logger.error(`❌ ${connectorId} 继承分组配置失败:`, error);

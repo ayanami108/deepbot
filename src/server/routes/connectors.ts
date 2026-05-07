@@ -299,6 +299,33 @@ export function createConnectorsRouter(gatewayAdapter: GatewayAdapter): Router {
   router.get('/smart-kf/kf-welcome', getKfWelcome);
   router.post('/work-prompt', saveWorkPrompt);
 
+  // 智能客服：保存工作目录
+  const saveKfWorkspaceDirs: RequestHandler = async (req, res) => {
+    try {
+      const { settingKey, connectorId, dirs } = req.body;
+      if (!settingKey || !connectorId) { res.status(400).json({ success: false, error: '缺少 settingKey 或 connectorId' }); return; }
+      const result = await gatewayAdapter.connectorSaveKfWorkspaceDirs(settingKey, connectorId, dirs);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: getErrorMessage(error) });
+    }
+  };
+
+  // 智能客服：获取工作目录
+  const getKfWorkspaceDirs: RequestHandler = async (req, res) => {
+    try {
+      const settingKey = req.query.settingKey as string;
+      if (!settingKey) { res.status(400).json({ success: false, error: '缺少 settingKey' }); return; }
+      const result = await gatewayAdapter.connectorGetKfWorkspaceDirs(settingKey);
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ success: false, error: getErrorMessage(error) });
+    }
+  };
+
+  router.post('/smart-kf/kf-workspace-dirs', saveKfWorkspaceDirs);
+  router.get('/smart-kf/kf-workspace-dirs', getKfWorkspaceDirs);
+
   router.get('/:connectorId/config', getConnectorConfig);
   router.post('/:connectorId/config', saveConnectorConfig);
   router.post('/:connectorId/start', startConnector);

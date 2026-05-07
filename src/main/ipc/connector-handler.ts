@@ -640,4 +640,57 @@ export function registerConnectorHandlers(): void {
       }
     }
   );
+
+  // 保存连接器工作目录（同步到所有匹配的 Tab）
+  registerIpcHandler<{ settingKey: string; connectorId: string; dirs: string[] | null }, { success: boolean; error?: string }>(
+    IPC_CHANNELS.CONNECTOR_SAVE_KF_WORKSPACE_DIRS,
+    async (_event, request): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const store = SystemConfigStore.getInstance();
+        store.setAppSetting(request.settingKey, request.dirs ? JSON.stringify(request.dirs) : '');
+
+        // 同步到所有匹配的 Tab
+        if (gateway) {
+          const { updateTabWorkspaceDirs } = require('../database/tab-config');
+          const db = store.getDb();
+          const tabManager = gateway.getTabManager();
+          const allTabs = tabManager.getAllTabs();
+          for (const tab of allTabs) {
+            let match = false;
+            if (request.connectorId === 'smart-kf') {
+              const openKfId = request.settingKey.replace('smart_kf_workspace_dirs_', '');
+              match = tab.connectorId === 'smart-kf' && tab.conversationId?.split('||')[1] === openKfId;
+            } else {
+              match = tab.connectorId === request.connectorId;
+            }
+            if (match) {
+              updateTabWorkspaceDirs(db, tab.id, request.dirs);
+              await gateway.destroySessionRuntime(tab.id);
+              gateway.invalidateSessionSystemPrompt(tab.id);
+            }
+          }
+        }
+
+        return { success: true };
+      } catch (error) {
+        console.error('[IPC] 保存连接器工作目录失败:', error);
+        return { success: false, error: getErrorMessage(error) };
+      }
+    }
+  );
+
+  // 获取连接器工作目录
+  registerIpcHandler<{ settingKey: string }, { success: boolean; dirs: string[] | null; error?: string }>(
+    IPC_CHANNELS.CONNECTOR_GET_KF_WORKSPACE_DIRS,
+    async (_event, request): Promise<{ success: boolean; dirs: string[] | null; error?: string }> => {
+      try {
+        const store = SystemConfigStore.getInstance();
+        const json = store.getAppSetting(request.settingKey);
+        const dirs = json ? JSON.parse(json) : null;
+        return { success: true, dirs };
+      } catch (error) {
+        return { success: false, dirs: null, error: getErrorMessage(error) };
+      }
+    }
+  );
 }

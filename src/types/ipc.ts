@@ -121,6 +121,8 @@ export const IPC_CHANNELS = {
   CONNECTOR_SAVE_KF_WELCOME: 'connector:save-kf-welcome', // 保存客服欢迎语配置
   CONNECTOR_GET_KF_WELCOME: 'connector:get-kf-welcome',   // 获取客服欢迎语配置
   CONNECTOR_SAVE_WORK_PROMPT: 'connector:save-work-prompt', // 保存连接器工作提示词（同步到所有 Tab）
+  CONNECTOR_SAVE_KF_WORKSPACE_DIRS: 'connector:save-kf-workspace-dirs', // 保存客服工作目录（同步到所有 Tab）
+  CONNECTOR_GET_KF_WORKSPACE_DIRS: 'connector:get-kf-workspace-dirs', // 获取客服工作目录
   
   // Tab 回复模式
   GET_TAB_REPLY_MODE: 'tab:get-reply-mode',

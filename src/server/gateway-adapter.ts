@@ -636,6 +636,40 @@ export class GatewayAdapter extends EventEmitter {
 
     return { success: true };
   }
+
+  async connectorSaveKfWorkspaceDirs(settingKey: string, connectorId: string, dirs: string[] | null): Promise<any> {
+    const { SystemConfigStore } = await import('../main/database/system-config-store');
+    const { updateTabWorkspaceDirs } = await import('../main/database/tab-config');
+    const store = SystemConfigStore.getInstance();
+    store.setAppSetting(settingKey, dirs ? JSON.stringify(dirs) : '');
+
+    const db = store.getDb();
+    const tabManager = this.gateway.getTabManager();
+    const allTabs = tabManager.getAllTabs();
+    for (const tab of allTabs) {
+      let match = false;
+      if (connectorId === 'smart-kf') {
+        const openKfId = settingKey.replace('smart_kf_workspace_dirs_', '');
+        match = tab.connectorId === 'smart-kf' && tab.conversationId?.split('||')[1] === openKfId;
+      } else {
+        match = tab.connectorId === connectorId;
+      }
+      if (match) {
+        updateTabWorkspaceDirs(db, tab.id, dirs);
+        await this.gateway.destroySessionRuntime(tab.id);
+        this.gateway.invalidateSessionSystemPrompt(tab.id);
+      }
+    }
+    return { success: true };
+  }
+
+  async connectorGetKfWorkspaceDirs(settingKey: string): Promise<any> {
+    const { SystemConfigStore } = await import('../main/database/system-config-store');
+    const store = SystemConfigStore.getInstance();
+    const json = store.getAppSetting(settingKey);
+    const dirs = json ? JSON.parse(json) : null;
+    return { success: true, dirs };
+  }
   
   /**
    * 定时任务

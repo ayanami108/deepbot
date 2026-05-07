@@ -257,7 +257,11 @@ export class AgentInitializer {
 
           // 记住 cd 的目标目录
           if (cmd === 'cd') {
-            const cdTarget = trimmedPart.replace(/^cd\s+/, '').trim();
+            let cdTarget = trimmedPart.replace(/^cd\s+/, '').trim();
+            // 展开 ~ 为用户主目录
+            if (cdTarget.startsWith('~')) {
+              cdTarget = cdTarget.replace('~', require('os').homedir());
+            }
             cdDir = cdTarget ? path.resolve(cdDir || '', cdTarget) : '';
             continue;
           }
@@ -276,7 +280,11 @@ export class AgentInitializer {
               return { block: true, reason: '智能客服会话的 Python 命令必须指定 .py 文件' };
             }
 
-            const pyPath = trimmedPart.match(/(?:python3?)\s+(\S+\.py)/)?.[1] || '';
+            let pyPath = trimmedPart.match(/(?:python3?)\s+(\S+\.py)/)?.[1] || '';
+            // 展开 ~ 为用户主目录
+            if (pyPath.startsWith('~')) {
+              pyPath = pyPath.replace('~', require('os').homedir());
+            }
             // 如果前面有 cd，基于 cd 的目录解析相对路径
             const resolvedPath = cdDir ? path.resolve(cdDir, pyPath) : path.resolve(pyPath);
 

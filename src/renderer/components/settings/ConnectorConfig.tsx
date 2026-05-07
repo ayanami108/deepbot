@@ -83,6 +83,14 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
   const [kfNameInputTitle, setKfNameInputTitle] = useState('');
   const [kfAvatarPath, setKfAvatarPath] = useState('');
   const [kfAvatarPreview, setKfAvatarPreview] = useState('');
+  // 客服工作目录弹窗（通用：智能客服/企业微信/飞书）
+  const [showKfWorkspaceDirs, setShowKfWorkspaceDirs] = useState(false);
+  const [kfWorkspaceDirsOpenKfId, setKfWorkspaceDirsOpenKfId] = useState('');
+  const [kfWorkspaceDirsName, setKfWorkspaceDirsName] = useState('');
+  const [kfWorkspaceDirsSettingKey, setKfWorkspaceDirsSettingKey] = useState('');
+  const [kfWorkspaceDirsConnectorId, setKfWorkspaceDirsConnectorId] = useState('');
+  const [kfWorkspaceMainDir, setKfWorkspaceMainDir] = useState('');
+  const [kfWorkspaceExtraDirs, setKfWorkspaceExtraDirs] = useState<string[]>([]);
   const [kfNameInputCallback, setKfNameInputCallback] = useState<((name: string, avatarPath?: string) => Promise<void> | void) | null>(null);
 
   useEffect(() => {
@@ -131,6 +139,28 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
     setWorkPromptSettingKey(settingKey);
     setWorkPromptConnectorId(connectorId);
     setShowWorkPromptModal(true);
+  };
+
+  // 打开工作目录弹窗（通用）
+  const openWorkspaceDirsModal = async (title: string, settingKey: string, connectorId: string) => {
+    try {
+      const result = await api.getAppSetting(settingKey);
+      const dirs = result?.value ? JSON.parse(result.value) : null;
+      if (dirs && dirs.length > 0) {
+        setKfWorkspaceMainDir(dirs[0]);
+        setKfWorkspaceExtraDirs(dirs.slice(1));
+      } else {
+        setKfWorkspaceMainDir('');
+        setKfWorkspaceExtraDirs([]);
+      }
+    } catch {
+      setKfWorkspaceMainDir('');
+      setKfWorkspaceExtraDirs([]);
+    }
+    setKfWorkspaceDirsName(title);
+    setKfWorkspaceDirsSettingKey(settingKey);
+    setKfWorkspaceDirsConnectorId(connectorId);
+    setShowKfWorkspaceDirs(true);
   };
 
   // 打开客服账号编辑弹窗
@@ -411,17 +441,30 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="block text-sm font-medium text-gray-700">App ID <span className="text-red-500">*</span></label>
-              <button
-                className="skill-card-action flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors"
-                onClick={() => openWorkPromptModal(
-                  lang === 'zh' ? '飞书工作提示词' : 'Feishu Work Prompt',
-                  'feishu_default_work_prompt',
-                  'feishu'
-                )}
-              >
-                <FileText size={12} />
-                <span>{lang === 'zh' ? '工作提示词' : 'Work Prompt'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  className="skill-card-action flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors"
+                  onClick={() => openWorkPromptModal(
+                    lang === 'zh' ? '飞书工作提示词' : 'Feishu Work Prompt',
+                    'feishu_default_work_prompt',
+                    'feishu'
+                  )}
+                >
+                  <FileText size={12} />
+                  <span>{lang === 'zh' ? '工作提示词' : 'Work Prompt'}</span>
+                </button>
+                <button
+                  className="skill-card-action flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors"
+                  onClick={() => openWorkspaceDirsModal(
+                    lang === 'zh' ? '飞书工作目录' : 'Feishu Workspace',
+                    'feishu_workspace_dirs',
+                    'feishu'
+                  )}
+                >
+                  <FolderOpen size={12} />
+                  <span>{lang === 'zh' ? '工作目录' : 'Workspace'}</span>
+                </button>
+              </div>
             </div>
             <input type="text" value={feishuConfig.appId} onChange={(e) => setFeishuConfig({ ...feishuConfig, appId: e.target.value })}
               placeholder="cli_xxxxxxxxxxxxxxxx" className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" />
@@ -628,6 +671,17 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
                   >
                     <FileText size={12} />
                     <span>{lang === 'zh' ? '工作提示词' : 'Work Prompt'}</span>
+                  </button>
+                  <button
+                    className="skill-card-action flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors"
+                    onClick={() => openWorkspaceDirsModal(
+                      lang === 'zh' ? `工作目录 - ${wcDisplayName}` : `Workspace - ${wcDisplayName}`,
+                      `wecom_workspace_dirs_${wc.id}`,
+                      wc.id
+                    )}
+                  >
+                    <FolderOpen size={12} />
+                    <span>{lang === 'zh' ? '工作目录' : 'Workspace'}</span>
                   </button>
                   {!isFirst && !wc.enabled && (
                     <button
@@ -925,6 +979,17 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
                   >
                     <Link size={12} />
                     <span>{lang === 'zh' ? '链接' : 'URL'}</span>
+                  </button>
+                  <button
+                    onClick={() => openWorkspaceDirsModal(
+                      lang === 'zh' ? `工作目录 - ${kf.name}` : `Workspace - ${kf.name}`,
+                      `smart_kf_workspace_dirs_${kf.open_kfid}`,
+                      'smart-kf'
+                    )}
+                    className="skill-card-action flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors"
+                  >
+                    <FolderOpen size={12} />
+                    <span>{lang === 'zh' ? '目录' : 'Dir'}</span>
                   </button>
                   <button
                     onClick={() => openKfNameInput(
@@ -1445,6 +1510,131 @@ export function ConnectorConfig({ onClose, onNavigate }: ConnectorConfigProps) {
                   }}
                   disabled={!kfNameInputValue.trim()}
                   className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+                >
+                  {lang === 'zh' ? '保存' : 'Save'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 客服工作目录弹窗 */}
+      {showKfWorkspaceDirs && (
+        <div className="settings-overlay" onClick={() => setShowKfWorkspaceDirs(false)}>
+          <div
+            className="tab-model-picker-container"
+            style={{ width: '550px', maxWidth: '90vw', display: 'flex', flexDirection: 'column', background: 'var(--settings-bg)', color: 'var(--settings-text)', border: '1px solid var(--settings-border)', borderRadius: '8px', boxShadow: '0 20px 60px var(--terminal-overlay)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="settings-header">
+              <h2 className="settings-title">{lang === 'zh' ? `工作目录 - ${kfWorkspaceDirsName}` : `Workspace - ${kfWorkspaceDirsName}`}</h2>
+              <button className="settings-close-button" onClick={() => setShowKfWorkspaceDirs(false)}>
+                <X size={20} />
+              </button>
+            </div>
+            <div style={{ padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div className="settings-alert settings-alert-success" style={{ marginBottom: '0', flexShrink: 0 }}>
+                <p className="text-sm text-green-800">
+                  {lang === 'zh'
+                    ? '指定该客服 AI 可访问的文件目录范围。留空则使用系统默认工作目录。'
+                    : 'Specify directories this KF AI can access. Leave empty to use system default.'}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  {lang === 'zh' ? '主工作目录' : 'Main Directory'}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={kfWorkspaceMainDir}
+                    onChange={(e) => setKfWorkspaceMainDir(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder={lang === 'zh' ? '例如：/Users/xxx/knowledge-base' : 'e.g. /Users/xxx/knowledge-base'}
+                  />
+                  <button
+                    onClick={async () => {
+                      const result = await api.selectFolder();
+                      if (result?.success && result.path) setKfWorkspaceMainDir(result.path);
+                    }}
+                    className="skill-icon-button"
+                  >
+                    <FolderOpen size={16} />
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  {lang === 'zh' ? '额外目录（可选）' : 'Extra Directories (optional)'}
+                </label>
+                {kfWorkspaceExtraDirs.map((dir, idx) => (
+                  <div key={idx} className="flex gap-2">
+                    <input
+                      type="text"
+                      value={dir}
+                      onChange={(e) => {
+                        const next = [...kfWorkspaceExtraDirs];
+                        next[idx] = e.target.value;
+                        setKfWorkspaceExtraDirs(next);
+                      }}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={async () => {
+                        const result = await api.selectFolder();
+                        if (result?.success && result.path) {
+                          const next = [...kfWorkspaceExtraDirs];
+                          next[idx] = result.path;
+                          setKfWorkspaceExtraDirs(next);
+                        }
+                      }}
+                      className="skill-icon-button"
+                    >
+                      <FolderOpen size={16} />
+                    </button>
+                    <button
+                      onClick={() => setKfWorkspaceExtraDirs(prev => prev.filter((_, i) => i !== idx))}
+                      className="skill-icon-button"
+                      style={{ color: 'var(--settings-error)' }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => setKfWorkspaceExtraDirs(prev => [...prev, ''])}
+                  className="skill-icon-button skill-icon-button-accent"
+                >
+                  <Plus size={14} />
+                  <span style={{ fontSize: '12px', marginLeft: '4px' }}>{lang === 'zh' ? '添加目录' : 'Add'}</span>
+                </button>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', paddingTop: '12px', borderTop: '1px solid var(--settings-border, #e5e7eb)', marginTop: '4px' }}>
+                <button
+                  onClick={async () => {
+                    await api.connectorSaveKfWorkspaceDirs(kfWorkspaceDirsSettingKey, kfWorkspaceDirsConnectorId, null);
+                    setShowKfWorkspaceDirs(false);
+                    showToast('success', lang === 'zh' ? '已恢复系统默认工作目录' : 'Reset to system default');
+                  }}
+                  className="skill-icon-button"
+                  style={{ padding: '8px 20px', fontSize: '13px' }}
+                >
+                  {lang === 'zh' ? '恢复默认' : 'Reset'}
+                </button>
+                <button
+                  onClick={async () => {
+                    const mainDir = kfWorkspaceMainDir.trim();
+                    if (!mainDir) {
+                      await api.connectorSaveKfWorkspaceDirs(kfWorkspaceDirsSettingKey, kfWorkspaceDirsConnectorId, null);
+                    } else {
+                      const allDirs = [mainDir, ...kfWorkspaceExtraDirs.filter(d => d.trim()).map(d => d.trim())];
+                      await api.connectorSaveKfWorkspaceDirs(kfWorkspaceDirsSettingKey, kfWorkspaceDirsConnectorId, allDirs);
+                    }
+                    setShowKfWorkspaceDirs(false);
+                    showToast('success', lang === 'zh' ? '工作目录已保存' : 'Workspace dirs saved');
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
                 >
                   {lang === 'zh' ? '保存' : 'Save'}
                 </button>

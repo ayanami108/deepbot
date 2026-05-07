@@ -995,8 +995,23 @@ function registerIpcHandlers() {
       
       updateTabWorkspaceDirs(db, tabId, dirs);
       
-      // 销毁该 Tab 的 Runtime，下次使用时用新工作目录重建
+      // 连接器 Tab：同步工作目录到 app setting
       if (gateway) {
+        const tabManager = gateway.getTabManager();
+        const tab = tabManager.getTab(tabId);
+
+        if (tab?.connectorId === 'smart-kf' && tab.conversationId) {
+          const openKfId = tab.conversationId.split('||')[1];
+          if (openKfId) {
+            store.setAppSetting(`smart_kf_workspace_dirs_${openKfId}`, dirs ? JSON.stringify(dirs) : '');
+          }
+        } else if (tab?.connectorId?.startsWith('wecom')) {
+          store.setAppSetting(`wecom_workspace_dirs_${tab.connectorId}`, dirs ? JSON.stringify(dirs) : '');
+        } else if (tab?.connectorId === 'feishu') {
+          store.setAppSetting('feishu_workspace_dirs', dirs ? JSON.stringify(dirs) : '');
+        }
+
+        // 销毁该 Tab 的 Runtime，下次使用时用新工作目录重建
         await gateway.destroySessionRuntime(tabId);
         gateway.invalidateSessionSystemPrompt(tabId);
       }

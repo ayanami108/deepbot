@@ -338,6 +338,18 @@ export const api = {
     return webClient.post('/api/connectors/work-prompt', { settingKey, workPrompt, connectorId });
   },
 
+  // 保存连接器工作目录（同步到所有 Tab）
+  async connectorSaveKfWorkspaceDirs(settingKey: string, connectorId: string, dirs: string[] | null): Promise<any> {
+    if (isElectron()) return (window as any).deepbot.connectorSaveKfWorkspaceDirs(settingKey, connectorId, dirs);
+    return webClient.post('/api/connectors/smart-kf/kf-workspace-dirs', { settingKey, connectorId, dirs });
+  },
+
+  // 获取连接器工作目录
+  async connectorGetKfWorkspaceDirs(settingKey: string): Promise<any> {
+    if (isElectron()) return (window as any).deepbot.connectorGetKfWorkspaceDirs(settingKey);
+    return webClient.get(`/api/connectors/smart-kf/kf-workspace-dirs?settingKey=${encodeURIComponent(settingKey)}`);
+  },
+
   async setTabModelConfig(tabId: string, modelConfig: any): Promise<any> {
     if (isElectron()) return (window as any).deepbot.setTabModelConfig(tabId, modelConfig);
     return webClient.post(`/api/tabs/${tabId}/model-config`, { modelConfig });
