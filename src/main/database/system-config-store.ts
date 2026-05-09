@@ -203,6 +203,18 @@ export class SystemConfigStore {
       )
     `);
     
+    // Token 用量统计表（每日快照，按模型累加）
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS token_usage_daily (
+        date TEXT NOT NULL,
+        model_id TEXT NOT NULL,
+        input_tokens INTEGER NOT NULL DEFAULT 0,
+        output_tokens INTEGER NOT NULL DEFAULT 0,
+        request_count INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (date, model_id)
+      )
+    `);
+
     // Agent Tab 配置表
     const { initTabConfigTable } = require('./tab-config');
     initTabConfigTable(this.db);

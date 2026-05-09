@@ -748,4 +748,11 @@ export const api = {
     }
     return () => {};
   },
+
+  // ==================== Token 用量统计 ====================
+
+  async getTokenUsage(startDate: string, endDate: string): Promise<{ success: boolean; records: any[]; error?: string }> {
+    if (isElectron()) return (window as any).deepbot.getTokenUsage(startDate, endDate);
+    return webClient.get(`/api/token-usage?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
+  },
 };

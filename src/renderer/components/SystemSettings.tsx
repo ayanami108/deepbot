@@ -18,11 +18,12 @@ import { ToolConfig } from './settings/ToolConfig';
 import { ConnectorConfig } from './settings/ConnectorConfig';
 import { AppVersion } from './settings/AppVersion';
 import { Subscription } from './settings/Subscription';
+import { TokenUsage } from './settings/TokenUsage';
 import { t, getLanguage, setLanguage as saveLanguage, type Language } from '../i18n';
 import { api } from '../api';
 import '../styles/settings.css';
 
-type SettingsTab = 'quickstart' | 'model' | 'environment' | 'workspace' | 'tools' | 'connectors' | 'version' | 'subscription';
+type SettingsTab = 'quickstart' | 'model' | 'environment' | 'workspace' | 'tools' | 'connectors' | 'version' | 'token-usage' | 'subscription';
 
 interface SystemSettingsProps {
   isOpen: boolean;
@@ -180,6 +181,12 @@ export function SystemSettings({ isOpen, onClose, activeTabId }: SystemSettingsP
                 )}
               </button>
               <button
+                onClick={() => setActiveTab('token-usage')}
+                className={`settings-nav-item ${activeTab === 'token-usage' ? 'active' : ''}`}
+              >
+                {t('settings.tokenUsage')}
+              </button>
+              <button
                 onClick={() => setActiveTab('subscription')}
                 className={`settings-nav-item ${activeTab === 'subscription' ? 'active' : ''}`}
               >
@@ -207,6 +214,7 @@ export function SystemSettings({ isOpen, onClose, activeTabId }: SystemSettingsP
             {activeTab === 'workspace' && <WorkspaceConfig onClose={onClose} />}
             {activeTab === 'connectors' && <ConnectorConfig onClose={onClose} onNavigate={(tab) => setActiveTab(tab as any)} />}
             {activeTab === 'version' && <AppVersion initialUpdateInfo={pendingUpdateInfo} />}
+            {activeTab === 'token-usage' && <TokenUsage />}
             {activeTab === 'subscription' && <Subscription />}
           </div>
         </div>

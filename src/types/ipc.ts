@@ -128,6 +128,9 @@ export const IPC_CHANNELS = {
   GET_TAB_REPLY_MODE: 'tab:get-reply-mode',
   SET_TAB_REPLY_MODE: 'tab:set-reply-mode',
   
+  // Token 用量统计
+  GET_TOKEN_USAGE: 'token-usage:get',
+  
   // Tab 模型配置
   SET_TAB_MODEL_CONFIG: 'tab:set-model-config',
   GET_TAB_MODEL_CONFIG: 'tab:get-model-config',

@@ -119,6 +119,7 @@ const zh: Dict = {
   'settings.connectors': '外部通讯',
   'settings.version': '系统版本',
   'settings.subscription': '订阅及付费',
+  'settings.tokenUsage': 'Token 用量',
 };
 
 const en: Dict = {
@@ -221,6 +222,7 @@ const en: Dict = {
   'settings.connectors': 'Connectors',
   'settings.version': 'Version',
   'settings.subscription': 'Subscription',
+  'settings.tokenUsage': 'Token Usage',
 };
 
 const dictionaries: Record<Language, Dict> = { zh, en };

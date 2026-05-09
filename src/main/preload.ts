@@ -87,6 +87,7 @@ const IPC_CHANNELS = {
   CONNECTOR_GET_KF_WORKSPACE_DIRS: 'connector:get-kf-workspace-dirs',
   GET_TAB_REPLY_MODE: 'tab:get-reply-mode',
   SET_TAB_REPLY_MODE: 'tab:set-reply-mode',
+  GET_TOKEN_USAGE: 'token-usage:get',
   SET_TAB_MODEL_CONFIG: 'tab:set-model-config',
   GET_TAB_MODEL_CONFIG: 'tab:get-model-config',
   RENAME_TAB: 'tab:rename',
@@ -502,6 +503,11 @@ contextBridge.exposeInMainWorld('deepbot', {
 
   setTabReplyMode: (tabId: string, replyMode: 'agent' | 'direct') => {
     return ipcRenderer.invoke(IPC_CHANNELS.SET_TAB_REPLY_MODE, { tabId, replyMode });
+  },
+
+  // Token 用量统计
+  getTokenUsage: (startDate: string, endDate: string) => {
+    return ipcRenderer.invoke(IPC_CHANNELS.GET_TOKEN_USAGE, { startDate, endDate });
   },
 
   // 监听待授权用户数量变化

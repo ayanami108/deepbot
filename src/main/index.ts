@@ -1510,6 +1510,20 @@ function registerIpcHandlers() {
       return { success: false, value: null };
     }
   });
+
+  // Token 用量统计
+  ipcMain.handle(IPC_CHANNELS.GET_TOKEN_USAGE, async (_event, { startDate, endDate }) => {
+    try {
+      const { getTokenUsage } = await import('./database/token-usage');
+      const configStore = SystemConfigStore.getInstance();
+      const db = configStore.getDb();
+      const records = getTokenUsage(db, startDate, endDate);
+      return { success: true, records };
+    } catch (error) {
+      console.error('[IPC] 获取 Token 用量失败:', getErrorMessage(error));
+      return { success: false, error: getErrorMessage(error), records: [] };
+    }
+  });
   
   // ==================== Tab 管理 ====================
   
