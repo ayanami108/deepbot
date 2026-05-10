@@ -11,7 +11,7 @@
 export const PROVIDER_PRESETS = {
   deepbot: {
     name: 'DeepBot',
-    baseUrl: 'https://www.im-director.com/api/llm-v1',
+    baseUrl: 'http://43.155.132.14/api/llm-v1',
     defaultModelId: 'deepseek-v4-flash',
     defaultModelId2: 'deepseek-v4-flash',  // 快速模型
     apiType: 'openai-completions',

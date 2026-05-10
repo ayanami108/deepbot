@@ -439,15 +439,15 @@ export class GatewayMessageHandler {
         const { estimateTokens, recordTokenUsage } = await import('./database/token-usage');
         const { SystemConfigStore } = await import('./database/system-config-store');
         
-        // 输入 token = 系统提示词 + 工具定义 + 历史消息（与 Context Manager 一致）
-        const inputTokens = runtime.getContextTokenCount();
+        const inputTokens = runtime.getAccumulatedInputTokens();
+        const turnCount = runtime.getTurnCount();
         const outputTokens = estimateTokens(fullResponse);
         const modelId = runtime.getModelId() || 'unknown';
         const db = SystemConfigStore.getInstance().getDb();
-        recordTokenUsage(db, modelId, inputTokens, outputTokens);
-        console.log(`[MessageHandler] 📊 Token 用量已记录: 输入=${inputTokens}, 输出=${outputTokens}, 模型=${modelId}`);
+        recordTokenUsage(db, modelId, inputTokens, outputTokens, turnCount || 1);
+        console.log(`[MessageHandler] 📊 用量已记录: 输入字符=${inputTokens}(${turnCount}turns), 输出字符=${outputTokens}, 模型=${modelId}`);
       } catch (tokenError) {
-        console.error('[MessageHandler] ⚠️ 记录 Token 用量失败:', getErrorMessage(tokenError));
+        console.error('[MessageHandler] ⚠️ 记录用量失败:', getErrorMessage(tokenError));
       }
 
       // 检查并执行延迟重置（如工具配置变更）
@@ -477,19 +477,20 @@ export class GatewayMessageHandler {
       console.log('[MessageHandler] ✅ Agent 执行完成，检查队列...');
       await this.processMessageQueue(sessionId);
     } catch (error) {
-      // 只有 AI 确实返回了内容（fullResponse 非空）才记录 token，一开始就失败的不计算
+      // 只有 AI 确实返回了内容（fullResponse 非空）才记录，一开始就失败的不计算
       if (fullResponse.length > 0) {
         try {
           const { estimateTokens, recordTokenUsage } = await import('./database/token-usage');
           const { SystemConfigStore } = await import('./database/system-config-store');
-          const inputTokens = runtime.getContextTokenCount();
+          const inputTokens = runtime.getAccumulatedInputTokens();
+          const turnCount = runtime.getTurnCount();
           const outputTokens = estimateTokens(fullResponse);
           const modelId = runtime.getModelId() || 'unknown';
           const db = SystemConfigStore.getInstance().getDb();
-          recordTokenUsage(db, modelId, inputTokens, outputTokens);
-          console.log(`[MessageHandler] 📊 Token 用量已记录(中断): 输入=${inputTokens}, 输出=${outputTokens}, 模型=${modelId}`);
+          recordTokenUsage(db, modelId, inputTokens, outputTokens, turnCount || 1);
+          console.log(`[MessageHandler] 📊 用量已记录(中断): 输入字符=${inputTokens}(${turnCount}turns), 输出字符=${outputTokens}, 模型=${modelId}`);
         } catch {
-          // 忽略 token 记录错误
+          // 忽略记录错误
         }
       }
       console.error('AI 响应失败:', error);

@@ -153,6 +153,9 @@ ${responseForAI}
         useFastModel: true,
       });
       
+      // 记录这次 AI 调用的字符消耗
+      this.messageHandler.addExtraUsage(prompt.length + (aiResponse.content?.length || 0));
+      
       const decision = aiResponse.content.trim();
       console.log(`   AI 判断结果: ${decision}`);
       

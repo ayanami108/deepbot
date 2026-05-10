@@ -10,10 +10,7 @@
 import type Database from '../../shared/utils/sqlite-adapter';
 
 /**
- * 估算文本的 token 数
- * 使用与 Context Manager 一致的算法：
- * 中文/日文/韩文字符 ≈ 1.5 token/字符
- * 英文/数字/符号 ≈ 0.25 token/字符（4字符=1token）
+ * 计算文本的字符数（中文=1，英文/数字/符号=0.5）
  */
 export function estimateTokens(text: string): number {
   if (!text) return 0;
@@ -22,7 +19,7 @@ export function estimateTokens(text: string): number {
   const cjkChars = cjkMatches ? cjkMatches.length : 0;
   const otherChars = text.length - cjkChars;
   
-  return Math.ceil(cjkChars * 1.5 + otherChars / 4);
+  return Math.ceil(cjkChars + otherChars * 0.5);
 }
 
 /**
@@ -37,24 +34,25 @@ function getTodayDate(): string {
 }
 
 /**
- * 记录 token 用量（累加到当天快照）
+ * 记录用量（累加到当天快照）
  */
 export function recordTokenUsage(
   db: Database.Database,
   modelId: string,
   inputTokens: number,
-  outputTokens: number
+  outputTokens: number,
+  requestCount: number = 1
 ): void {
   const date = getTodayDate();
   
   db.prepare(`
     INSERT INTO token_usage_daily (date, model_id, input_tokens, output_tokens, request_count)
-    VALUES (?, ?, ?, ?, 1)
+    VALUES (?, ?, ?, ?, ?)
     ON CONFLICT(date, model_id) DO UPDATE SET
       input_tokens = input_tokens + excluded.input_tokens,
       output_tokens = output_tokens + excluded.output_tokens,
-      request_count = request_count + 1
-  `).run(date, modelId, inputTokens, outputTokens);
+      request_count = request_count + excluded.request_count
+  `).run(date, modelId, inputTokens, outputTokens, requestCount);
 }
 
 /**

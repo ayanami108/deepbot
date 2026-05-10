@@ -826,42 +826,24 @@ export class AgentRuntime {
   }
 
   /**
+   * 获取当前执行的 Turn 数
+   */
+  getTurnCount(): number {
+    return this.messageHandler.getTurnCount();
+  }
+
+  /**
+   * 获取累计输入字符数（所有 Turn 的实际上下文大小之和）
+   */
+  getAccumulatedInputTokens(): number {
+    return this.messageHandler.getAccumulatedInputTokens();
+  }
+
+  /**
    * 获取当前系统提示词
    */
   getSystemPrompt(): string {
     return this.systemPrompt;
-  }
-
-  /**
-   * 获取当前上下文的完整 token 数（用于 token 用量统计）
-   * 包含：系统提示词 + 工具定义 + 历史消息（与 Context Manager 计算方式一致）
-   */
-  getContextTokenCount(): number {
-    const { estimateTextTokens, estimateMessagesTokens } = require('../utils/token-estimator');
-    
-    // 系统提示词 token
-    const systemPromptTokens = estimateTextTokens(this.systemPrompt || '');
-    
-    // 工具定义 token
-    let toolsTokens = 0;
-    if (this.tools && this.tools.length > 0) {
-      let toolsText = '';
-      for (const tool of this.tools) {
-        toolsText += (tool.name || '') + ' ';
-        toolsText += (tool.label || '') + ' ';
-        toolsText += (tool.description || '') + ' ';
-        toolsText += JSON.stringify(tool.parameters || {});
-      }
-      toolsTokens = estimateTextTokens(toolsText);
-    }
-    
-    // 历史消息 token
-    let messagesTokens = 0;
-    if (this.instanceManager.agent) {
-      messagesTokens = estimateMessagesTokens(this.instanceManager.agent.state.messages);
-    }
-    
-    return systemPromptTokens + toolsTokens + messagesTokens;
   }
 
   /**

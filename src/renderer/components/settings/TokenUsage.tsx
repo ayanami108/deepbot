@@ -225,8 +225,8 @@ export function TokenUsage() {
             <thead>
               <tr style={{ background: 'var(--settings-bg-secondary, rgba(0,0,0,0.03))' }}>
                 <th style={thStyle}>{lang === 'zh' ? '模型' : 'Model'}</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>{lang === 'zh' ? '消耗' : 'Usage'}</th>
-                <th style={{ ...thStyle, textAlign: 'right' }}>{lang === 'zh' ? '请求次数' : 'Requests'}</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>{lang === 'zh' ? '字符消耗' : 'Characters'}</th>
+                <th style={{ ...thStyle, textAlign: 'right' }}>{lang === 'zh' ? '调用轮次' : 'Turns'}</th>
               </tr>
             </thead>
             <tbody>
@@ -255,8 +255,8 @@ export function TokenUsage() {
       {/* 说明 */}
       <p style={{ marginTop: '16px', fontSize: '12px', color: 'var(--settings-text-dim)' }}>
         {lang === 'zh' 
-          ? 'Token 估算规则：1个中文字符 ≈ 1.5 token，4个英文字符 ≈ 1 token。实际使用以大模型真实消耗为准。'
-          : 'Token estimation: 1 CJK character ≈ 1.5 tokens, 4 English characters ≈ 1 token. Actual usage is subject to the model provider\'s billing.'}
+          ? <>统计数据为实际消耗的字符数（中文=1，英文=0.5）。<span style={{ color: 'var(--settings-accent)', fontWeight: 500 }}>Token 因每个模型计算方式不一致，实际消耗以模型提供商账单为准。</span></>
+          : <>Statistics show actual characters consumed (CJK=1, English=0.5). <span style={{ color: 'var(--settings-accent)', fontWeight: 500 }}>Token usage varies by model tokenizer. Refer to your provider's billing for actual token consumption.</span></>}
       </p>
     </div>
   );

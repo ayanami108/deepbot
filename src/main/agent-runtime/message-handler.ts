@@ -30,6 +30,12 @@ export class MessageHandler {
   // 当前正在流式输出的内容
   private currentStreamingContent = '';
   
+  // 当前执行的 Turn 数
+  private turnCount = 0;
+  
+  // 累计输入字符数（每个 Turn 开始时累加当时的上下文大小）
+  private accumulatedInputTokens = 0;
+  
   // 进度监控定时器（需要在停止生成时清除）
   private progressTimer: NodeJS.Timeout | null = null;
 
@@ -149,6 +155,10 @@ export class MessageHandler {
     
     // 重置当前流式输出内容
     this.currentStreamingContent = '';
+    
+    // 重置 Turn 计数和累计字符数
+    this.turnCount = 0;
+    this.accumulatedInputTokens = 0;
     
     try {
       // 订阅 Agent 事件，并实现真正的流式输出
@@ -328,6 +338,32 @@ export class MessageHandler {
         
         // 监听 Turn 事件（Agent 的每一轮思考）
         if (event.type === 'turn_start') {
+          this.turnCount++;
+          // 累加当前 Turn 的上下文字符数（中文=1，英文=0.5）
+          const { estimateTokens } = require('../database/token-usage');
+          const systemChars = estimateTokens(this.agent?.state.systemPrompt || '');
+          let messagesChars = 0;
+          for (const msg of (this.agent?.state.messages || [])) {
+            const content = msg.content as any;
+            if (typeof content === 'string') {
+              messagesChars += estimateTokens(content);
+            } else if (Array.isArray(content)) {
+              for (const part of content) {
+                if (typeof part === 'string') {
+                  messagesChars += estimateTokens(part);
+                } else if (typeof part === 'object' && part) {
+                  messagesChars += estimateTokens(JSON.stringify(part));
+                }
+              }
+            }
+          }
+          let toolsChars = 0;
+          if (this.agent?.state.tools && this.agent.state.tools.length > 0) {
+            for (const tool of this.agent.state.tools) {
+              toolsChars += estimateTokens((tool.name || '') + (tool.label || '') + (tool.description || '') + JSON.stringify(tool.parameters || {}));
+            }
+          }
+          this.accumulatedInputTokens += systemChars + toolsChars + messagesChars;
           console.log(`🔄 Agent 开始新的 Turn（思考轮次）`);
           console.log(`   当前消息数: ${this.agent?.state.messages.length || 0}`);
         }
@@ -761,5 +797,27 @@ export class MessageHandler {
    */
   getCurrentStreamingContent(): string {
     return this.currentStreamingContent;
+  }
+
+  /**
+   * 获取当前执行的 Turn 数
+   */
+  getTurnCount(): number {
+    return this.turnCount;
+  }
+
+  /**
+   * 获取累计输入字符数
+   */
+  getAccumulatedInputTokens(): number {
+    return this.accumulatedInputTokens;
+  }
+
+  /**
+   * 添加额外的用量（如 detectUnfinishedIntent 的 AI 调用）
+   */
+  addExtraUsage(chars: number): void {
+    this.turnCount++;
+    this.accumulatedInputTokens += chars;
   }
 }
