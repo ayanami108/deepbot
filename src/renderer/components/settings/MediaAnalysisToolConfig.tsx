@@ -68,7 +68,7 @@ export function MediaAnalysisToolConfig({ onClose }: MediaAnalysisToolConfigProp
     <div className="space-y-6">
       <div>
         <h4 className="text-base font-medium text-gray-900 mb-2">
-          {lang === 'zh' ? '多媒体分析工具配置' : 'Media Analysis Tool Config'}
+          {lang === 'zh' ? '图片/视频分析工具配置' : 'Image/Video Analysis Tool Config'}
         </h4>
         <p className="text-sm text-gray-600 mb-4">
           {lang === 'zh'

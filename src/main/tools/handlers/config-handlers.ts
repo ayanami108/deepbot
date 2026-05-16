@@ -68,6 +68,10 @@ export async function handleGetConfig(
     if (params.configType === 'web-search' || params.configType === 'all') {
       result.webSearch = store.getWebSearchToolConfig();
     }
+
+    if (params.configType === 'all') {
+      result.mediaAnalysis = store.getMediaAnalysisToolConfig();
+    }
     
     // 查询工具禁用状态
     const disabledTools = store.getDisabledTools();

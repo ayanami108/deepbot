@@ -21,7 +21,7 @@ import { getLanguage } from '../../i18n';
 const TOGGLEABLE_TOOLS_ZH: Array<{ name: string; label: string; description: string }> = [
   { name: 'image_generation', label: '图片生成', description: '内置图片生成工具' },
   { name: 'web_search', label: '网络搜索', description: '内置网络搜索工具' },
-  { name: 'media_analysis', label: '多媒体分析', description: '图片/视频内容分析（仅 DeepBot 供应商）' },
+  { name: 'media_analysis', label: '图片/视频分析', description: '图片/视频内容分析（仅 DeepBot 供应商）' },
   { name: 'browser', label: '浏览器控制', description: '通过 Chrome 远程调试控制浏览器' },
   { name: 'calendar_get_events', label: '日历读取', description: '读取 macOS 日历事件' },
   { name: 'calendar_create_event', label: '日历创建', description: '在 macOS 日历中创建事件' },
@@ -30,7 +30,7 @@ const TOGGLEABLE_TOOLS_ZH: Array<{ name: string; label: string; description: str
 const TOGGLEABLE_TOOLS_EN: Array<{ name: string; label: string; description: string }> = [
   { name: 'image_generation', label: 'Image Generation', description: 'Built-in image generation tool' },
   { name: 'web_search', label: 'Web Search', description: 'Built-in web search tool' },
-  { name: 'media_analysis', label: 'Media Analysis', description: 'Image/video content analysis (DeepBot provider only)' },
+  { name: 'media_analysis', label: 'Image/Video Analysis', description: 'Image/video content analysis (DeepBot provider only)' },
   { name: 'browser', label: 'Browser Control', description: 'Control browser via Chrome remote debugging' },
   { name: 'calendar_get_events', label: 'Calendar Read', description: 'Read macOS calendar events' },
   { name: 'calendar_create_event', label: 'Calendar Create', description: 'Create events in macOS calendar' },
@@ -205,7 +205,7 @@ export function ToolConfig({ onClose }: ToolConfigProps) {
             onClick={() => setActiveTab('media')}
             className={`settings-tab ${activeTab === 'media' ? 'active' : ''}`}
           >
-            {lang === 'zh' ? '多媒体分析' : 'Media Analysis'}
+            {lang === 'zh' ? '图片/视频分析' : 'Image/Video Analysis'}
           </button>
           <button
             onClick={() => setActiveTab('browser')}

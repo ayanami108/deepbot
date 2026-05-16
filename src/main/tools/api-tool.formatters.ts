@@ -53,14 +53,23 @@ export function formatGetConfigResult(result: any): string {
   // 🔥 Web 搜索工具配置 - 即使未配置也显示
   if (result.webSearch !== undefined) {
     const wsDisabled = result.disabledTools?.includes('web_search');
-    message += `🔍 Web 搜索工具配置：${wsDisabled ? '⏸️ 已禁用' : '✅ 已启用'}\n`;
+    message += `🔍 Web 搜索工具配置（Tavily）：${wsDisabled ? '⏸️ 已禁用' : '✅ 已启用'}\n`;
     if (result.webSearch) {
-      message += `  • 提供商: ${result.webSearch.provider}\n`;
-      message += `  • 模型: ${result.webSearch.model}\n`;
-      message += `  • API 地址: ${result.webSearch.apiUrl}\n`;
       message += `  • API Key: ${result.webSearch.apiKey ? '已配置' : '未配置'}\n\n`;
     } else {
       message += `  • 暂无配置\n\n`;
+    }
+  }
+
+  // 🔥 图片/视频分析工具配置
+  if (result.mediaAnalysis !== undefined) {
+    const maDisabled = result.disabledTools?.includes('media_analysis');
+    message += `🎬 图片/视频分析工具配置：${maDisabled ? '⏸️ 已禁用' : '✅ 已启用'}\n`;
+    if (result.mediaAnalysis) {
+      message += `  • 模型: ${result.mediaAnalysis.model}\n`;
+      message += `  • 说明: 复用主模型 API Key（仅 DeepBot 供应商可用）\n\n`;
+    } else {
+      message += `  • 使用默认模型: qwen3-vl-30b-a3b-instruct\n\n`;
     }
   }
   
