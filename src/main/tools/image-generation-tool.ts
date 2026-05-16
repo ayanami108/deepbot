@@ -15,10 +15,10 @@ import { TOOL_NAMES } from './tool-names';
 import { getErrorMessage } from '../../shared/utils/error-handler';
 import { ensureDirectoryExists } from '../../shared/utils/fs-utils';
 import type { SystemConfigStore } from '../database/system-config-store';
-import { generateImageWithGemini, analyzeImageWithGemini } from './providers/gemini-provider';
+import { generateImageWithGemini } from './providers/gemini-provider';
 import { generateImageWithQwen } from './providers/qwen-provider';
 import { generateImageWithGptImage2 } from './providers/gpt-image-provider';
-import { expandPath, getMimeType } from './providers/image-utils';
+import { expandPath } from './providers/image-utils';
 import type { ToolPlugin, ToolCreateOptions } from './registry/tool-interface';
 
 // 默认输出目录
@@ -81,19 +81,9 @@ function getToolConfig(configStore: SystemConfigStore, tabImageToolConfig?: { pr
  * 图片生成参数
  */
 const ImageGenerationSchema = Type.Object({
-  action: Type.Optional(Type.Union([
-    Type.Literal('generate', { description: '生成图片（默认）' }),
-    Type.Literal('analyze', { description: '解析图片（必须同时提供 imagePath）' }),
-  ])),
-  prompt: Type.Optional(Type.String({
-    description: '图片生成提示词（中文或英文）。action=generate 时必填',
-  })),
-  imagePath: Type.Optional(Type.String({
-    description: '要解析的图片路径（action=analyze 时必填，不能为空）',
-  })),
-  analysisPrompt: Type.Optional(Type.String({
-    description: '图片分析的自定义提示词（可选）。用于引导分析结果，例如："请识别图片中的文字"、"请分析图片中的情绪"、"请描述图片的艺术风格"等',
-  })),
+  prompt: Type.String({
+    description: '图片生成提示词（中文或英文）',
+  }),
   aspectRatio: Type.Optional(Type.Union([
     Type.Literal('1:1', { description: '正方形' }),
     Type.Literal('4:3', { description: '横向标准' }),
@@ -142,28 +132,6 @@ async function generateImage(params: {
 }
 
 /**
- * 调用对应提供商解析图片
- */
-async function analyzeImage(params: {
-  imagePath: string;
-  apiKey: string;
-  apiUrl: string;
-  model: string;
-  provider: 'gemini' | 'qwen' | 'gpt-image';
-  prompt?: string; // 🔥 可选的自定义提示词
-  signal?: AbortSignal;
-}): Promise<string> {
-  if (params.provider === 'qwen') {
-    throw new Error('Qwen 模型暂不支持图片解析功能，请使用 Gemini 模型');
-  }
-  if (params.provider === 'gpt-image') {
-    throw new Error('GPT Image 2 暂不支持图片解析功能，请使用 Gemini 模型');
-  }
-  
-  return analyzeImageWithGemini(params);
-}
-
-/**
  * 保存图片到文件
  */
 function saveImage(imageData: string, mimeType: string, outputDir: string, outputPath?: string): string {
@@ -197,22 +165,17 @@ export function createImageGenerationTool(configStore: SystemConfigStore, sessio
   return {
     name: TOOL_NAMES.IMAGE_GENERATION,
     label: 'Image Generation',
-    description: '生成图片或解析图片内容。支持文本生成图片、基于参考图片生成（最多5张）、解析图片生成描述。可指定宽高比和分辨率。',
+    description: '生成图片。支持文本生成图片、基于参考图片生成（最多5张）。可指定宽高比和分辨率。',
     parameters: ImageGenerationSchema,
     execute: async (_toolCallId: string, args: unknown, signal?: AbortSignal) => {
       try {
         const params = args as {
-          action?: 'generate' | 'analyze';
-          prompt?: string;
-          imagePath?: string;
-          analysisPrompt?: string; // 🔥 图片分析的自定义提示词
+          prompt: string;
           aspectRatio?: '1:1' | '4:3' | '16:9' | '9:16' | '3:4' | '3:2' | '2:3' | '4:5' | '5:4' | '21:9';
           resolution?: '1K' | '2K';
           referenceImages?: string[];
           outputPath?: string;
         };
-
-        const action = params.action || 'generate';
 
         // 检查是否已被取消（执行前）
         if (signal?.aborted) {
@@ -221,7 +184,11 @@ export function createImageGenerationTool(configStore: SystemConfigStore, sessio
           throw err;
         }
 
-        // 🔥 每次执行时实时从数据库读取 Tab 配置，避免闭包缓存旧值
+        if (!params.prompt || !params.prompt.trim()) {
+          throw new Error('图片生成需要提供 prompt 参数');
+        }
+
+        // 每次执行时实时从数据库读取 Tab 配置，避免闭包缓存旧值
         let tabImageToolConfig: { provider?: string; model?: string; apiUrl?: string; apiKey?: string } | null = null;
         if (sessionId) {
           try {
@@ -235,58 +202,6 @@ export function createImageGenerationTool(configStore: SystemConfigStore, sessio
 
         console.log(`[Image Generation] 使用提供商: ${toolConfig.provider}`);
         console.log(`[Image Generation] 模型: ${toolConfig.model}`);
-
-        // 图片解析
-        if (action === 'analyze') {
-          if (!params.imagePath) {
-            throw new Error('图片解析需要提供 imagePath 参数');
-          }
-
-          console.log('[Image Analysis] 开始解析图片...');
-          console.log(`   图片路径: ${params.imagePath}`);
-          if (params.analysisPrompt) {
-            console.log(`   自定义提示词: ${params.analysisPrompt.substring(0, 50)}...`);
-          }
-
-          const analysisResult = await analyzeImage({
-            imagePath: params.imagePath,
-            apiKey: toolConfig.apiKey,
-            apiUrl: toolConfig.apiUrl,
-            model: toolConfig.model,
-            provider: toolConfig.provider,
-            prompt: params.analysisPrompt, // 🔥 传递自定义提示词
-            signal,
-          });
-
-          console.log('[Image Analysis] ✅ 图片解析成功');
-
-          return {
-            type: 'tool-result',
-            details: {
-              success: true,
-              action: 'analyze',
-              provider: toolConfig.provider,
-              prompt: analysisResult,
-            },
-            content: [
-              {
-                type: 'text',
-                text: JSON.stringify({
-                  success: true,
-                  action: 'analyze',
-                  provider: toolConfig.provider,
-                  message: '图片解析成功',
-                  prompt: analysisResult,
-                }, null, 2),
-              },
-            ],
-          };
-        }
-
-        // 图片生成
-        if (!params.prompt) {
-          throw new Error('图片生成需要提供 prompt 参数');
-        }
 
         // 从配置中读取输出目录
         const workspaceSettings = configStore.getWorkspaceSettings();
@@ -337,7 +252,6 @@ export function createImageGenerationTool(configStore: SystemConfigStore, sessio
           type: 'tool-result',
           details: {
             success: true,
-            action: 'generate',
             provider: toolConfig.provider,
             path: displayPath,
             aspectRatio: params.aspectRatio || '16:9',
@@ -349,7 +263,6 @@ export function createImageGenerationTool(configStore: SystemConfigStore, sessio
               type: 'text',
               text: JSON.stringify({
                 success: true,
-                action: 'generate',
                 provider: toolConfig.provider,
                 message: '图片生成成功，显示图片预览时，必须直接使用 path 字段的值作为图片路径，不要添加任何前缀（如 ~ 或 file://），path 已经是完整的绝对路径',
                 path: displayPath,

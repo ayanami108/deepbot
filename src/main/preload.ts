@@ -41,6 +41,8 @@ const IPC_CHANNELS = {
   SAVE_IMAGE_GENERATION_TOOL_CONFIG: 'tool-config:image-generation:save',
   GET_WEB_SEARCH_TOOL_CONFIG: 'tool-config:web-search:get',
   SAVE_WEB_SEARCH_TOOL_CONFIG: 'tool-config:web-search:save',
+  GET_MEDIA_ANALYSIS_TOOL_CONFIG: 'tool-config:media-analysis:get',
+  SAVE_MEDIA_ANALYSIS_TOOL_CONFIG: 'tool-config:media-analysis:save',
   GET_DISABLED_TOOLS: 'tool-config:disabled:get',
   SAVE_DISABLED_TOOLS: 'tool-config:disabled:save',
   LAUNCH_CHROME_WITH_DEBUG: 'browser:launch-chrome-with-debug',
@@ -226,6 +228,15 @@ contextBridge.exposeInMainWorld('deepbot', {
 
   saveWebSearchToolConfig: (config: { model: string; apiUrl: string; apiKey: string }) => {
     return ipcRenderer.invoke(IPC_CHANNELS.SAVE_WEB_SEARCH_TOOL_CONFIG, { config });
+  },
+
+  // 工具配置 - 多媒体分析工具
+  getMediaAnalysisToolConfig: () => {
+    return ipcRenderer.invoke(IPC_CHANNELS.GET_MEDIA_ANALYSIS_TOOL_CONFIG);
+  },
+
+  saveMediaAnalysisToolConfig: (config: { model: string }) => {
+    return ipcRenderer.invoke(IPC_CHANNELS.SAVE_MEDIA_ANALYSIS_TOOL_CONFIG, { config });
   },
 
   // 工具禁用管理

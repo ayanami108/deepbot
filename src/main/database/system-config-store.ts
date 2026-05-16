@@ -21,6 +21,7 @@ import type {
   ModelConfig,
   ImageGenerationToolConfig,
   WebSearchToolConfig,
+  MediaAnalysisToolConfig,
 } from './config-types';
 
 // 导入各个配置模块
@@ -183,6 +184,14 @@ export class SystemConfigStore {
       CREATE TABLE IF NOT EXISTS tool_config_web_search (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         api_key TEXT NOT NULL DEFAULT ''
+      )
+    `);
+
+    // 工具配置表 - 多媒体分析工具（仅存储模型选择，API Key 复用主模型）
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS tool_config_media_analysis (
+        id INTEGER PRIMARY KEY CHECK (id = 1),
+        model TEXT NOT NULL DEFAULT 'qwen3-vl-30b-a3b-instruct'
       )
     `);
 
@@ -531,6 +540,18 @@ export class SystemConfigStore {
     return ToolConfigModule.deleteWebSearchToolConfig(this.db);
   }
 
+  getMediaAnalysisToolConfig(): MediaAnalysisToolConfig | null {
+    return ToolConfigModule.getMediaAnalysisToolConfig(this.db);
+  }
+
+  saveMediaAnalysisToolConfig(config: MediaAnalysisToolConfig): void {
+    return ToolConfigModule.saveMediaAnalysisToolConfig(this.db, config);
+  }
+
+  deleteMediaAnalysisToolConfig(): void {
+    return ToolConfigModule.deleteMediaAnalysisToolConfig(this.db);
+  }
+
   // ========== 名字配置 ==========
 
   getNameConfig(): { agentName: string; userName: string } {
@@ -698,4 +719,5 @@ export type {
   ModelConfig,
   ImageGenerationToolConfig,
   WebSearchToolConfig,
+  MediaAnalysisToolConfig,
 };

@@ -297,6 +297,7 @@ export class GatewayAdapter extends EventEmitter {
       connectors: store.getAllConnectorConfigs(),
       imageGeneration: store.getImageGenerationToolConfig(),
       webSearch: store.getWebSearchToolConfig(),
+      mediaAnalysis: store.getMediaAnalysisToolConfig(),
       isDocker: isDockerMode(), // Docker 模式标识，前端用于置灰目录配置
     };
   }
@@ -355,6 +356,11 @@ export class GatewayAdapter extends EventEmitter {
     // 更新网页搜索工具配置
     if (updates.webSearch) {
       store.saveWebSearchToolConfig(updates.webSearch);
+    }
+
+    // 更新多媒体分析工具配置
+    if (updates.mediaAnalysis) {
+      store.saveMediaAnalysisToolConfig(updates.mediaAnalysis);
     }
   }
   

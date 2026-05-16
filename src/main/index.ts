@@ -1319,6 +1319,30 @@ function registerIpcHandlers() {
     }
   });
 
+  // 获取多媒体分析工具配置
+  ipcMain.handle(IPC_CHANNELS.GET_MEDIA_ANALYSIS_TOOL_CONFIG, async () => {
+    try {
+      const { SystemConfigStore } = await import('./database/system-config-store');
+      const store = SystemConfigStore.getInstance();
+      const config = store.getMediaAnalysisToolConfig();
+      return { success: true, config };
+    } catch (error) {
+      return { success: false, error: getErrorMessage(error) };
+    }
+  });
+
+  // 保存多媒体分析工具配置
+  ipcMain.handle(IPC_CHANNELS.SAVE_MEDIA_ANALYSIS_TOOL_CONFIG, async (_event, { config }) => {
+    try {
+      const { SystemConfigStore } = await import('./database/system-config-store');
+      const store = SystemConfigStore.getInstance();
+      store.saveMediaAnalysisToolConfig(config);
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: getErrorMessage(error) };
+    }
+  });
+
   // 获取禁用工具列表
   ipcMain.handle(IPC_CHANNELS.GET_DISABLED_TOOLS, async () => {
     try {

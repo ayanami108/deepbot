@@ -252,16 +252,18 @@ google-chrome --remote-debugging-port=9222
 3. 默认不指定 `aspectRatio` 和 `resolution`，除非用户明确要求
 4. 只显示生成的新图，不要显示参考图
 
-### 参考图与图片分析
-- **解析图片**（用户说"解析"、"分析"、"描述"、"识别文字"） → `action: "analyze"` + `imagePath`（必填）
-- **参考图生成**（其他所有情况） → `action: "generate"` + `referenceImages` + 用户原始提示词
+### 参考图生成
+- 用户提供参考图时 → `referenceImages` + 用户原始提示词
 - ❌ 不要先解析参考图再生成，直接传递 `referenceImages`
-- ⚠️ `action: "analyze"` 必须提供 `imagePath`，否则报错
 
 ### 保存路径
 - 用户指定路径 → 使用 `outputPath` 参数，一步到位
 - 用户未指定 → 不要添加 `outputPath`，使用默认目录
 - ❌ 禁止先生成再用 `exec` 移动文件
+
+### 图片分析
+- 用户说"解析"、"分析"、"描述"、"识别文字"等 → 使用 `media_analysis` 工具（如果可用）
+- ❌ 不要使用图片生成工具进行图片分析
 
 ### 示例
 
@@ -269,17 +271,50 @@ google-chrome --remote-debugging-port=9222
 // 基础生成
 { "prompt": "一只可爱的橙色小猫坐在窗台上" }
 
-// 解析图片
-{ "action": "analyze", "imagePath": "~/.deepbot/temp/uploads/abc123.jpg" }
-
-// 带自定义提示词的图片分析
-{ "action": "analyze", "imagePath": "~/.deepbot/temp/uploads/abc123.jpg", "analysisPrompt": "请识别图片中的所有文字内容" }
-
 // 基于参考图生成
-{ "action": "generate", "prompt": "去掉图上的人，生成坐轮椅的人", "referenceImages": ["~/.deepbot/temp/uploads/abc123.jpg"] }
+{ "prompt": "去掉图上的人，生成坐轮椅的人", "referenceImages": ["~/.deepbot/temp/uploads/abc123.jpg"] }
 
 // 指定保存路径
 { "prompt": "一只可爱的小猫", "outputPath": "~/path/to/cat.jpg" }
+```
+
+---
+
+## Media Analysis（多媒体分析）
+
+> ⚠️ 此工具可被禁用。仅当 `## Tools` 中存在 `media_analysis` 工具时，才按以下指导使用；如果工具列表中没有此工具，视为不存在。
+
+### 核心原则
+1. 仅在主模型为 DeepBot 供应商时可用，复用主模型的 API Key
+2. 支持图片和视频文件的内容分析
+3. 视频分析通过抽帧方式进行，fps 参数控制抽帧率
+
+### 使用场景
+- ✅ 分析图片内容（描述、文字识别、场景理解）
+- ✅ 分析视频内容（动作描述、场景变化、字幕提取）
+- ✅ 支持格式：图片(jpg/png/gif/webp/bmp/tiff)、视频(mp4/mov/avi/mkv/webm)
+- ❌ 不要用于图片生成（使用 `image_generation`）
+- ❌ 主模型非 DeepBot 供应商时不可用
+
+### 参数说明
+- `filePath`（必填）：图片或视频文件路径
+- `prompt`（可选）：分析提示词，默认"请详细描述这个文件的内容"
+- `fps`（可选）：视频抽帧率，1-10，默认 2（每秒取 2 帧）
+
+### 示例
+
+```json
+// 分析图片
+{ "filePath": "~/Desktop/photo.jpg" }
+
+// 带提示词分析图片
+{ "filePath": "~/Desktop/screenshot.png", "prompt": "请识别图片中的所有文字" }
+
+// 分析视频
+{ "filePath": "~/Desktop/video.mp4", "prompt": "视频的主要内容是什么？" }
+
+// 视频高帧率分析（更精细）
+{ "filePath": "~/Desktop/demo.mp4", "prompt": "详细描述视频中的操作步骤", "fps": 5 }
 ```
 
 ---

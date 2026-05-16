@@ -72,6 +72,8 @@ export const IPC_CHANNELS = {
   SAVE_IMAGE_GENERATION_TOOL_CONFIG: 'tool-config:image-generation:save',
   GET_WEB_SEARCH_TOOL_CONFIG: 'tool-config:web-search:get',
   SAVE_WEB_SEARCH_TOOL_CONFIG: 'tool-config:web-search:save',
+  GET_MEDIA_ANALYSIS_TOOL_CONFIG: 'tool-config:media-analysis:get',
+  SAVE_MEDIA_ANALYSIS_TOOL_CONFIG: 'tool-config:media-analysis:save',
   
   // 工具禁用管理
   GET_DISABLED_TOOLS: 'tool-config:disabled:get',

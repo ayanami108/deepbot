@@ -62,3 +62,10 @@ export interface ImageGenerationToolConfig {
 export interface WebSearchToolConfig {
   apiKey: string;          // Tavily API Key
 }
+
+/**
+ * 工具配置 - 多媒体分析工具（复用主模型 API Key，仅 DeepBot 供应商可用）
+ */
+export interface MediaAnalysisToolConfig {
+  model: string;           // 分析模型名称
+}

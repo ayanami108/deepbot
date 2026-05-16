@@ -108,6 +108,18 @@ export const api = {
     return { success: true };
   },
 
+  async getMediaAnalysisToolConfig(): Promise<any> {
+    if (isElectron()) return (window as any).deepbot.getMediaAnalysisToolConfig();
+    const config = await webClient.getConfig();
+    return { success: true, config: config.mediaAnalysis || null };
+  },
+
+  async saveMediaAnalysisToolConfig(config: any): Promise<any> {
+    if (isElectron()) return (window as any).deepbot.saveMediaAnalysisToolConfig(config);
+    await webClient.updateConfig({ mediaAnalysis: config });
+    return { success: true };
+  },
+
   async getDisabledTools(): Promise<{ success: boolean; disabledTools?: string[]; error?: string }> {
     if (isElectron()) return (window as any).deepbot.getDisabledTools();
     return webClient.get('/api/config/disabled-tools');

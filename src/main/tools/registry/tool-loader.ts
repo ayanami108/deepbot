@@ -24,6 +24,7 @@ import { scheduledTaskToolPlugin } from '../scheduled-task-tool';
 import { environmentCheckToolPlugin } from '../environment-check-tool';
 import { imageGenerationToolPlugin } from '../image-generation-tool';
 import { webSearchToolPlugin } from '../web-search-tool';
+import { mediaAnalysisToolPlugin } from '../media-analysis-tool';
 import { webFetchToolPlugin } from '../web-fetch-tool';
 import { memoryToolPlugin } from '../memory-tool';
 import { chatToolPlugin } from '../chat-tool';
@@ -165,6 +166,11 @@ export class ToolLoader {
       // 网络搜索工具
       if (configStore && isEnabled(TOOL_NAMES.WEB_SEARCH)) {
         tools.push(...await resolvePluginTools(webSearchToolPlugin.create(pluginOpts)));
+      }
+
+      // 多媒体分析工具
+      if (configStore && isEnabled(TOOL_NAMES.MEDIA_ANALYSIS)) {
+        tools.push(...await resolvePluginTools(mediaAnalysisToolPlugin.create(pluginOpts)));
       }
       
       // Web 内容获取工具

@@ -27,6 +27,9 @@ export const TOOL_NAMES = {
   // 图片生成
   IMAGE_GENERATION: 'image_generation',
   
+  // 多媒体分析工具
+  MEDIA_ANALYSIS: 'media_analysis',
+
   // Web 搜索
   WEB_SEARCH: 'web_search',
   

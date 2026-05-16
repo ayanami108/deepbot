@@ -11,6 +11,7 @@ import {
 } from '../../../shared/config/default-configs';
 import { WebSearchToolConfig } from './WebSearchToolConfig';
 import { BrowserToolConfig } from './BrowserToolConfig';
+import { MediaAnalysisToolConfig } from './MediaAnalysisToolConfig';
 import { api } from '../../api';
 import { showToast } from '../../utils/toast';
 import { ApiKeyHelpModal } from './ApiKeyHelpModal';
@@ -20,6 +21,7 @@ import { getLanguage } from '../../i18n';
 const TOGGLEABLE_TOOLS_ZH: Array<{ name: string; label: string; description: string }> = [
   { name: 'image_generation', label: '图片生成', description: '内置图片生成工具' },
   { name: 'web_search', label: '网络搜索', description: '内置网络搜索工具' },
+  { name: 'media_analysis', label: '多媒体分析', description: '图片/视频内容分析（仅 DeepBot 供应商）' },
   { name: 'browser', label: '浏览器控制', description: '通过 Chrome 远程调试控制浏览器' },
   { name: 'calendar_get_events', label: '日历读取', description: '读取 macOS 日历事件' },
   { name: 'calendar_create_event', label: '日历创建', description: '在 macOS 日历中创建事件' },
@@ -28,6 +30,7 @@ const TOGGLEABLE_TOOLS_ZH: Array<{ name: string; label: string; description: str
 const TOGGLEABLE_TOOLS_EN: Array<{ name: string; label: string; description: string }> = [
   { name: 'image_generation', label: 'Image Generation', description: 'Built-in image generation tool' },
   { name: 'web_search', label: 'Web Search', description: 'Built-in web search tool' },
+  { name: 'media_analysis', label: 'Media Analysis', description: 'Image/video content analysis (DeepBot provider only)' },
   { name: 'browser', label: 'Browser Control', description: 'Control browser via Chrome remote debugging' },
   { name: 'calendar_get_events', label: 'Calendar Read', description: 'Read macOS calendar events' },
   { name: 'calendar_create_event', label: 'Calendar Create', description: 'Create events in macOS calendar' },
@@ -46,7 +49,7 @@ interface ImageGenerationConfig {
 
 export function ToolConfig({ onClose }: ToolConfigProps) {
   const lang = getLanguage();
-  const [activeTab, setActiveTab] = useState<'image' | 'websearch' | 'email' | 'browser' | 'manage'>('image');
+  const [activeTab, setActiveTab] = useState<'image' | 'websearch' | 'media' | 'email' | 'browser' | 'manage'>('image');
   const [showApiKeyHelp, setShowApiKeyHelp] = useState(false);
   const [imageGenConfig, setImageGenConfig] = useState<ImageGenerationConfig>({
     provider: DEFAULT_IMAGE_GENERATION_CONFIG.provider,
@@ -199,6 +202,12 @@ export function ToolConfig({ onClose }: ToolConfigProps) {
             {lang === 'zh' ? '网络搜索' : 'Web Search'}
           </button>
           <button
+            onClick={() => setActiveTab('media')}
+            className={`settings-tab ${activeTab === 'media' ? 'active' : ''}`}
+          >
+            {lang === 'zh' ? '多媒体分析' : 'Media Analysis'}
+          </button>
+          <button
             onClick={() => setActiveTab('browser')}
             className={`settings-tab ${activeTab === 'browser' ? 'active' : ''}`}
           >
@@ -334,6 +343,11 @@ export function ToolConfig({ onClose }: ToolConfigProps) {
       {/* Web Search 工具配置 */}
       {activeTab === 'websearch' && (
         <WebSearchToolConfig onClose={onClose} />
+      )}
+
+      {/* 多媒体分析工具配置 */}
+      {activeTab === 'media' && (
+        <MediaAnalysisToolConfig onClose={onClose} />
       )}
 
       {/* 浏览器工具配置 */}

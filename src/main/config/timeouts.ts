@@ -41,6 +41,9 @@ export const TIMEOUTS = {
   
   // Web 搜索
   WEB_SEARCH_TIMEOUT: 60 * 1000,               // 60 秒
+
+  // 多媒体分析（视频上传+分析可能较慢）
+  MEDIA_ANALYSIS_TIMEOUT: 120 * 1000,           // 120 秒
   
   // 会话管理
   SESSION_CLEANUP_TIMEOUT: 30 * 60 * 1000,     // 30 分钟
