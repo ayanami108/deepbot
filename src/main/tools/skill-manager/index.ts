@@ -18,6 +18,10 @@ import { searchSkillsOnGitHub } from './search';
 import { installSkill } from './install';
 import type { ToolPlugin, ToolCreateOptions } from '../registry/tool-interface';
 import { listInstalledSkills, uninstallSkill, getSkillInfo, getSkillEnv, setSkillEnv, exportSkills, importSkills } from './manage';
+import { parseSkillMetadata } from './utils';
+import { getAllSkillPaths } from '../../config/skill-paths';
+import * as path from 'path';
+import * as fs from 'fs';
 import { resetShellPathCache } from '../shell-env';
 
 /**
@@ -156,6 +160,7 @@ export function createSkillManagerTool(): AgentTool {
               if (updateResult.changes === 0) {
                 throw new Error(`Skill "${name}" 不存在`);
               }
+              refreshSkillMetadata(name, db);
               result = { success: true, message: `Skill "${name}" 已启用` };
               invalidateSystemPrompts();
             }
@@ -236,6 +241,33 @@ function invalidateSystemPrompts(): void {
     }
   } catch (error) {
     console.warn('[Skill Manager] ⚠️ 标记系统提示词重建失败:', error);
+  }
+}
+
+/**
+ * 重新读取 SKILL.md 并更新数据库中的 metadata（version、description 等）
+ * 在 enable 时调用，确保系统提示词使用最新内容
+ */
+function refreshSkillMetadata(skillName: string, db: any): void {
+  try {
+    const skillPaths = getAllSkillPaths();
+    for (const skillPath of skillPaths) {
+      const skillDir = path.join(skillPath, skillName);
+      const skillMdPath = path.join(skillDir, 'SKILL.md');
+      if (!fs.existsSync(skillMdPath)) continue;
+
+      const metadata = parseSkillMetadata(skillDir);
+      db.prepare('UPDATE skills SET version = ?, repository = ?, metadata = ? WHERE name = ?').run(
+        metadata.version || '1.0.0',
+        metadata.repository || '',
+        JSON.stringify(metadata),
+        skillName
+      );
+      console.info(`[Skill Manager] 🔄 刷新 Skill 元数据: ${skillName}`);
+      return;
+    }
+  } catch (error) {
+    console.warn(`[Skill Manager] ⚠️ 刷新 Skill 元数据失败: ${skillName}`, error);
   }
 }
 

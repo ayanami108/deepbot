@@ -64,7 +64,7 @@ export const SkillManager: React.FC<SkillManagerProps> = ({ isOpen, onClose, act
   const [installedSearchQuery, setInstalledSearchQuery] = useState('');
   const [showEnabledOnly, setShowEnabledOnly] = useState(() => {
     const cached = localStorage.getItem('skill-manager:showEnabledOnly');
-    return cached === null ? false : cached === 'true';
+    return cached === null ? true : cached === 'true';
   });
   const [installedSkills, setInstalledSkills] = useState<Skill[]>([]);
   const [availableSkills, setAvailableSkills] = useState<Skill[]>([]);
