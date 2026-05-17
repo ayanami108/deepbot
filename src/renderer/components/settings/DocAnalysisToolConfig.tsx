@@ -45,7 +45,7 @@ export function DocAnalysisToolConfig({ onClose }: DocAnalysisToolConfigProps) {
               <a href="https://github.com/microsoft/markitdown" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--settings-accent)', textDecoration: 'underline' }}>markitdown</a>
               ，请先安装：<br />
               <code style={{ display: 'inline-block', marginTop: '6px', padding: '4px 8px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '13px' }}>
-                pip install markitdown
+                pip install markitdown -i https://mirrors.aliyun.com/pypi/simple
               </code>
               <br /><br />
               或直接告诉 DeepBot：<code style={{ padding: '2px 6px', background: 'rgba(0,0,0,0.1)', borderRadius: '3px' }}>帮我安装 markitdown</code>
@@ -56,7 +56,7 @@ export function DocAnalysisToolConfig({ onClose }: DocAnalysisToolConfigProps) {
               <a href="https://github.com/microsoft/markitdown" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--settings-accent)', textDecoration: 'underline' }}>markitdown</a>
               . Please install it first:<br />
               <code style={{ display: 'inline-block', marginTop: '6px', padding: '4px 8px', background: 'rgba(0,0,0,0.1)', borderRadius: '4px', fontFamily: 'monospace', fontSize: '13px' }}>
-                pip install markitdown
+                pip install markitdown -i https://mirrors.aliyun.com/pypi/simple
               </code>
               <br /><br />
               Or tell DeepBot: <code style={{ padding: '2px 6px', background: 'rgba(0,0,0,0.1)', borderRadius: '3px' }}>Help me install markitdown</code>

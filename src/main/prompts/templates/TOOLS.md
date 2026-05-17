@@ -349,7 +349,8 @@ google-chrome --remote-debugging-port=9222
 ```
 
 ### 注意事项
-- 如果报错"未安装 markitdown"，需要先执行 `pip install markitdown`
+- 如果报错"未安装 markitdown"，需要先执行 `pip install markitdown -i https://mirrors.aliyun.com/pypi/simple`
+- 如果阿里云镜像连接不上，可切换其他国内镜像安装加速（如腾讯：`-i https://mirrors.cloud.tencent.com/pypi/simple`）
 - 文档内容过长时会自动截断（最多 50000 字符）
 
 ---

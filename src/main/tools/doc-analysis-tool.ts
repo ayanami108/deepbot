@@ -102,7 +102,7 @@ export function createDocAnalysisTool(): AgentTool {
         // 检查 markitdown 是否已安装
         if (!checkMarkitdownInstalled()) {
           throw new Error(
-            '未安装 markitdown。请先执行以下命令安装：pip install markitdown'
+            '未安装 markitdown。请先执行以下命令安装：pip install markitdown -i https://mirrors.aliyun.com/pypi/simple'
           );
         }
 
