@@ -57,6 +57,14 @@ export function TokenUsage() {
   const [records, setRecords] = useState<TokenUsageRecord[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeQuickBtn, setActiveQuickBtn] = useState<'today' | 'week' | 'month' | ''>('today');
+  const [imageQuota, setImageQuota] = useState<any>(null);
+
+  // 加载图片配额状态
+  useEffect(() => {
+    api.getImageQuotaStatus().then(result => {
+      if (result.success) setImageQuota(result.quota);
+    }).catch(() => {});
+  }, []);
 
   /** 查询 token 用量 */
   const fetchData = useCallback(async (start: string, end: string) => {
@@ -174,6 +182,69 @@ export function TokenUsage() {
       <h3 style={{ fontSize: '16px', fontWeight: 600, marginBottom: '16px', color: 'var(--settings-text)' }}>
         {t('settings.tokenUsage')}
       </h3>
+
+      {/* 图片生成配额 */}
+      {imageQuota && (
+        <div style={{
+          marginBottom: '20px',
+          padding: '12px 14px',
+          background: 'var(--settings-input-bg)',
+          border: '1px solid var(--settings-border)',
+          borderRadius: '8px',
+          fontSize: '13px',
+          color: 'var(--settings-text-dim)',
+        }}>
+          <div style={{ fontWeight: 600, color: 'var(--settings-text)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            🎨 {lang === 'zh' ? '图片生成配额' : 'Image Generation Quota'}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+            <div>
+              <div style={{ fontSize: '11px', color: 'var(--settings-text-dim)' }}>{lang === 'zh' ? '已使用 / 总配额' : 'Used / Total'}</div>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: imageQuota.exhausted ? '#ef4444' : 'var(--settings-text)' }}>
+                {imageQuota.unlimited
+                  ? `${imageQuota.used} / ∞`
+                  : `${imageQuota.used} / ${imageQuota.totalAllowed}`
+                }
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '11px', color: 'var(--settings-text-dim)' }}>{lang === 'zh' ? '有效期' : 'Validity'}</div>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: imageQuota.expired ? '#ef4444' : 'var(--settings-text)' }}>
+                {imageQuota.expiryDays === 0
+                  ? (lang === 'zh' ? '永久' : 'Permanent')
+                  : (() => {
+                      const expiryDate = new Date(imageQuota.startDate + imageQuota.expiryDays * 24 * 60 * 60 * 1000);
+                      return formatDate(expiryDate) + (imageQuota.expired ? (lang === 'zh' ? '（已过期）' : ' (Expired)') : '');
+                    })()
+                }
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize: '11px', color: 'var(--settings-text-dim)' }}>{lang === 'zh' ? '状态' : 'Status'}</div>
+              <div style={{ fontSize: '15px', fontWeight: 600, color: (imageQuota.expired || imageQuota.exhausted) ? '#ef4444' : '#22c55e' }}>
+                {imageQuota.expired
+                  ? (lang === 'zh' ? '已过期' : 'Expired')
+                  : imageQuota.exhausted
+                    ? (lang === 'zh' ? '已用完' : 'Exhausted')
+                    : (lang === 'zh' ? '正常' : 'Active')}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {imageQuota === null && (
+        <div style={{
+          marginBottom: '20px',
+          padding: '10px 14px',
+          background: 'rgba(239, 68, 68, 0.05)',
+          border: '1px solid rgba(239, 68, 68, 0.2)',
+          borderRadius: '8px',
+          fontSize: '12px',
+          color: '#ef4444',
+        }}>
+          🎨 {lang === 'zh' ? '图片生成 API Key 无效（缺少配额信息）' : 'Image generation API Key invalid (missing quota info)'}
+        </div>
+      )}
 
       {/* 快捷按钮 + 日期选择 */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginBottom: '20px' }}>

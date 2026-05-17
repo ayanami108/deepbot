@@ -160,8 +160,14 @@ export function ToolConfig({ onClose }: ToolConfigProps) {
     setSaving(true);
 
     try {
-      await api.saveImageGenerationToolConfig(imageGenConfig);
-      showToast('success', lang === 'zh' ? '配置保存成功' : 'Configuration saved');
+      const result = await api.saveImageGenerationToolConfig(imageGenConfig);
+      if (result && result.success === false) {
+        showToast('error', lang === 'zh'
+          ? result.error || 'API Key 无效，请检查是否正确'
+          : result.error || 'API Key invalid, please check');
+      } else {
+        showToast('success', lang === 'zh' ? '配置保存成功' : 'Configuration saved');
+      }
     } catch (error) {
       showToast('error', lang === 'zh'
         ? `保存失败: ${error instanceof Error ? error.message : '未知错误'}`

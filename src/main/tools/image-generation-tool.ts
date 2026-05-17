@@ -19,6 +19,7 @@ import { generateImageWithGemini } from './providers/gemini-provider';
 import { generateImageWithQwen } from './providers/qwen-provider';
 import { generateImageWithGptImage2 } from './providers/gpt-image-provider';
 import { expandPath } from './providers/image-utils';
+import { checkImageQuota, incrementImageQuotaUsed, syncImageQuotaToServer, parseApiKeyQuota, getImageQuotaStatus } from './providers/image-quota';
 import type { ToolPlugin, ToolCreateOptions } from './registry/tool-interface';
 
 // 默认输出目录
@@ -50,6 +51,10 @@ function getToolConfig(configStore: SystemConfigStore, tabImageToolConfig?: { pr
   if (!effectiveApiKey) {
     throw new Error('API Key 未配置。请在系统设置 > 工具配置中配置 API Key');
   }
+
+  // 解析配额后缀，只使用实际的 API Key
+  const quotaParsed = parseApiKeyQuota(effectiveApiKey, configStore);
+  const actualApiKey = quotaParsed ? quotaParsed.actualKey : effectiveApiKey;
   
   if (!effectiveApiUrl) {
     throw new Error('API 地址未配置。请在系统设置 > 工具配置中配置 API 地址');
@@ -69,7 +74,7 @@ function getToolConfig(configStore: SystemConfigStore, tabImageToolConfig?: { pr
   // deepbot 提供商走 gemini 逻辑，无需特殊处理
   
   return {
-    apiKey: effectiveApiKey,
+    apiKey: actualApiKey,
     apiUrl: effectiveApiUrl,
     model: effectiveModel,
     provider,
@@ -197,6 +202,25 @@ export function createImageGenerationTool(configStore: SystemConfigStore, sessio
           } catch { /* 静默处理 */ }
         }
 
+        // 配额检查（使用实际生效的 API Key）
+        const effectiveKey = (tabImageToolConfig?.apiKey || configStore.getImageGenerationToolConfig()?.apiKey || '').trim();
+        if (!effectiveKey) {
+          throw new Error('图片生成工具未配置 API Key');
+        }
+        const quotaParsedCheck = parseApiKeyQuota(effectiveKey, configStore);
+        if (!quotaParsedCheck) {
+          throw new Error('图片生成 API Key 无效，请检查是否正确');
+        }
+        const quotaStatus = getImageQuotaStatus(configStore);
+        if (quotaStatus) {
+          if (quotaStatus.expired) {
+            throw new Error(`图片生成配额已过期（有效期 ${quotaStatus.expiryDays} 天）。请联系管理员续期。`);
+          }
+          if (quotaStatus.exhausted) {
+            throw new Error(`图片生成配额已用完（${quotaStatus.used}/${quotaStatus.totalAllowed} 张）。请联系管理员增加配额。`);
+          }
+        }
+
         // 获取工具配置
         const toolConfig = getToolConfig(configStore, tabImageToolConfig);
 
@@ -247,6 +271,10 @@ export function createImageGenerationTool(configStore: SystemConfigStore, sessio
 
         console.log('[Image Generation] ✅ 图片生成成功');
         console.log(`   保存路径: ${savedPath}`);
+
+        // 配额计数 +1 并同步到服务器
+        incrementImageQuotaUsed(configStore);
+        syncImageQuotaToServer(configStore).catch(() => {});
 
         return {
           type: 'tool-result',

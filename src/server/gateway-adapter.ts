@@ -350,6 +350,14 @@ export class GatewayAdapter extends EventEmitter {
     
     // 更新图片生成工具配置
     if (updates.imageGeneration) {
+      // 验证 API Key 配额后缀
+      if (updates.imageGeneration.apiKey) {
+        const { parseApiKeyQuota } = await import('../main/tools/providers/image-quota');
+        const parsed = parseApiKeyQuota(updates.imageGeneration.apiKey, store);
+        if (!parsed) {
+          throw new Error('API Key 无效，请检查是否正确');
+        }
+      }
       store.saveImageGenerationToolConfig(updates.imageGeneration);
     }
     

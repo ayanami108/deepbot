@@ -1551,7 +1551,11 @@ export const ChatWindow: React.FC<ChatWindowProps> = React.memo(({
                     const configToSave = imageToolConfig && (imageToolConfig.model || imageToolConfig.apiUrl || imageToolConfig.apiKey)
                       ? imageToolConfig
                       : null;
-                    await api.saveTabImageToolConfig(tabId, configToSave);
+                    const result = await api.saveTabImageToolConfig(tabId, configToSave);
+                    if (result && result.success === false) {
+                      showToast('error', (result as any).error || (lang === 'zh' ? 'API Key 无效，请检查是否正确' : 'API Key invalid, please check'));
+                      return;
+                    }
                     if (imageToolGroupRef.current) {
                       for (const otherTabId of imageToolGroupRef.current) {
                         if (otherTabId !== tabId) {

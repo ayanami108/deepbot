@@ -91,9 +91,10 @@ export const api = {
     return config.imageGeneration || null;
   },
 
-  async saveImageGenerationToolConfig(config: any): Promise<void> {
+  async saveImageGenerationToolConfig(config: any): Promise<any> {
     if (isElectron()) return (window as any).deepbot.saveImageGenerationToolConfig(config);
     await webClient.updateConfig({ imageGeneration: config });
+    return { success: true };
   },
 
   async getWebSearchToolConfig(): Promise<any> {
@@ -777,6 +778,11 @@ export const api = {
   async getTokenUsage(startDate: string, endDate: string): Promise<{ success: boolean; records: any[]; error?: string }> {
     if (isElectron()) return (window as any).deepbot.getTokenUsage(startDate, endDate);
     return webClient.get(`/api/token-usage?startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`);
+  },
+
+  async getImageQuotaStatus(): Promise<{ success: boolean; quota: any | null }> {
+    if (isElectron()) return (window as any).deepbot.getImageQuotaStatus();
+    return webClient.get('/api/config/image-quota-status');
   },
 
   // ==================== 模型服务商路由配置 ====================

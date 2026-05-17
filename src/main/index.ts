@@ -1081,6 +1081,16 @@ function registerIpcHandlers() {
     try {
       const { SystemConfigStore } = await import('./database/system-config-store');
       const store = SystemConfigStore.getInstance();
+
+      // 验证 API Key 配额后缀
+      if (config && config.apiKey) {
+        const { parseApiKeyQuota } = await import('./tools/providers/image-quota');
+        const parsed = parseApiKeyQuota(config.apiKey, store);
+        if (!parsed) {
+          return { success: false, error: 'API Key 无效，请检查是否正确' };
+        }
+      }
+
       const configJson = config ? JSON.stringify(config) : null;
       store.getDb().prepare('UPDATE agent_tabs SET image_tool_config = ? WHERE id = ?').run(configJson, tabId);
       return { success: true };
@@ -1281,13 +1291,24 @@ function registerIpcHandlers() {
   ipcMain.handle(IPC_CHANNELS.SAVE_IMAGE_GENERATION_TOOL_CONFIG, async (_event, config) => {
     try {
       console.log('[IPC] 保存图片生成工具配置:', config);
+
+      // 验证 API Key 配额后缀
+      const { parseApiKeyQuota } = await import('./tools/providers/image-quota');
       const { SystemConfigStore } = await import('./database/system-config-store');
       const store = SystemConfigStore.getInstance();
+
+      if (config.apiKey) {
+        const parsed = parseApiKeyQuota(config.apiKey, store);
+        if (!parsed) {
+          return { success: false, error: 'API Key 无效，请检查是否正确' };
+        }
+      }
+
       store.saveImageGenerationToolConfig(config);
       return { success: true };
     } catch (error) {
       console.error('[IPC] 保存图片生成工具配置失败:', error);
-      throw error;
+      return { success: false, error: getErrorMessage(error) };
     }
   });
 
@@ -1599,6 +1620,18 @@ function registerIpcHandlers() {
     } catch (error) {
       console.error('[IPC] 获取 Token 用量失败:', getErrorMessage(error));
       return { success: false, error: getErrorMessage(error), records: [] };
+    }
+  });
+
+  // 获取图片生成配额状态
+  ipcMain.handle(IPC_CHANNELS.GET_IMAGE_QUOTA_STATUS, async () => {
+    try {
+      const { getImageQuotaStatus } = await import('./tools/providers/image-quota');
+      const configStore = SystemConfigStore.getInstance();
+      const quota = getImageQuotaStatus(configStore);
+      return { success: true, quota };
+    } catch (error) {
+      return { success: false, quota: null };
     }
   });
   

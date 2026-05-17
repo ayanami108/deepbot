@@ -98,6 +98,19 @@ export function createConfigRouter(gatewayAdapter: GatewayAdapter): Router {
       res.status(500).json({ success: false, error: getErrorMessage(error) });
     }
   }) as RequestHandler);
+
+  // 获取图片生成配额状态
+  router.get('/image-quota-status', (async (_req, res) => {
+    try {
+      const { getImageQuotaStatus } = await import('../../main/tools/providers/image-quota');
+      const { SystemConfigStore } = await import('../../main/database/system-config-store');
+      const store = SystemConfigStore.getInstance();
+      const quota = getImageQuotaStatus(store);
+      res.json({ success: true, quota });
+    } catch (error) {
+      res.json({ success: false, quota: null });
+    }
+  }) as RequestHandler);
   
   return router;
 }

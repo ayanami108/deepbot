@@ -373,6 +373,17 @@ export function createTabsRouter(gatewayAdapter: GatewayAdapter): Router {
       const { config } = req.body;
       const { SystemConfigStore } = await import('../../main/database/system-config-store');
       const store = SystemConfigStore.getInstance();
+
+      // 验证 API Key 配额后缀
+      if (config && config.apiKey) {
+        const { parseApiKeyQuota } = await import('../../main/tools/providers/image-quota');
+        const parsed = parseApiKeyQuota(config.apiKey, store);
+        if (!parsed) {
+          res.json({ success: false, error: 'API Key 无效，请检查是否正确' });
+          return;
+        }
+      }
+
       const configJson = config ? JSON.stringify(config) : null;
       store.getDb().prepare('UPDATE agent_tabs SET image_tool_config = ? WHERE id = ?').run(configJson, tabId);
       res.json({ success: true });
