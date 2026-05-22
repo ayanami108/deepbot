@@ -1155,9 +1155,9 @@ function registerIpcHandlers() {
       const path = await import('path');
       const crypto = await import('crypto');
       
-      // 检查文件大小（最大 5MB）
-      if (size > 5 * 1024 * 1024) {
-        throw new Error('图片大小不能超过 5MB');
+      // 检查文件大小（最大 10MB）
+      if (size > 10 * 1024 * 1024) {
+        throw new Error('图片大小不能超过 10MB');
       }
       
       // 从数据库读取工作目录配置

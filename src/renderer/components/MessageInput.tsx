@@ -419,7 +419,7 @@ export const MessageInput = forwardRef<MessageInputRef, MessageInputProps>(({
 
     // 处理图片
     if (imageFiles.length > 0) {
-      const maxSizeBytes = 5 * 1024 * 1024;
+      const maxSizeBytes = 10 * 1024 * 1024;
       const newImages: UploadedImage[] = [];
 
       for (const file of imageFiles) {

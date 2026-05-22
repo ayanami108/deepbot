@@ -815,7 +815,7 @@ export class GatewayAdapter extends EventEmitter {
    * 图片上传
    */
   async uploadImage(fileName: string, dataUrl: string, fileSize: number): Promise<any> {
-    return this.uploadFileBase(fileName, dataUrl, fileSize, 5 * 1024 * 1024, 'image');
+    return this.uploadFileBase(fileName, dataUrl, fileSize, 10 * 1024 * 1024, 'image');
   }
   
   async readImage(filePath: string): Promise<any> {

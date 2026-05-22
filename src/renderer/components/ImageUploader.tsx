@@ -3,7 +3,7 @@
  * 
  * 功能：
  * - 支持点击上传和拖拽上传
- * - 最多 5 张图片，每张最大 5MB
+ * - 最多 5 张图片，每张最大 10MB
  * - 显示缩略图和删除按钮
  */
 
@@ -28,7 +28,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   images,
   onImagesChange,
   maxImages = 5,
-  maxSizeMB = 5,
+  maxSizeMB = 10,
   showButtonOnly = false,
   showPreviewOnly = false,
   hasFiles = false,

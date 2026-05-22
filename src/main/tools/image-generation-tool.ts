@@ -107,7 +107,8 @@ const ImageGenerationSchema = Type.Object({
     Type.Literal('2K', { description: '约2048px' }),
   ])),
   referenceImages: Type.Optional(Type.Array(Type.String(), {
-    description: '参考图片路径列表（可选，最多5张）。用于风格参考或图片编辑。按顺序使用',
+    description: '参考图片路径列表（可选，最多10张）。用于风格参考或图片编辑。按顺序使用',
+    maxItems: 10,
   })),
   outputPath: Type.Optional(Type.String({
     description: '输出文件路径（可选）。默认保存到 ~/.deepbot/generated-images/',
@@ -171,7 +172,7 @@ export function createImageGenerationTool(configStore: SystemConfigStore, sessio
   return {
     name: TOOL_NAMES.IMAGE_GENERATION,
     label: 'Image Generation',
-    description: '生成图片。支持文本生成图片、基于参考图片生成（最多5张）。可指定宽高比和分辨率。',
+    description: '生成图片。支持文本生成图片、基于参考图片生成（最多10张）。可指定宽高比和分辨率。',
     parameters: ImageGenerationSchema,
     execute: async (_toolCallId: string, args: unknown, signal?: AbortSignal) => {
       try {
@@ -192,6 +193,11 @@ export function createImageGenerationTool(configStore: SystemConfigStore, sessio
 
         if (!params.prompt || !params.prompt.trim()) {
           throw new Error('图片生成需要提供 prompt 参数');
+        }
+
+        // 参考图片数量限制
+        if (params.referenceImages && params.referenceImages.length > 10) {
+          throw new Error('参考图片最多 10 张');
         }
 
         // 每次执行时实时从数据库读取 Tab 配置，避免闭包缓存旧值
