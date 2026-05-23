@@ -1,7 +1,7 @@
 /**
  * 多媒体分析工具
  *
- * 上传图片/视频到临时存储，调用 im-director.com API 进行分析
+ * 上传图片/视频到临时存储，调用 deepbot.plus API 进行分析
  * 仅在主模型为 DeepBot 供应商时可用，复用主模型的 API Key 和地址
  * 支持图片（jpg/png/gif/webp）和视频（mp4/mov/avi/mkv）
  */

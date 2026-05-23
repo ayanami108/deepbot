@@ -1600,7 +1600,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = React.memo(({
                   type="text"
                   value={imageToolConfig?.apiUrl || ''}
                   onChange={(e) => setImageToolConfig({ ...imageToolConfig || { model: '', apiUrl: '', apiKey: '' }, apiUrl: e.target.value })}
-                  placeholder="https://im-director.com/tool/gemini"
+                  placeholder="https://deepbot.plus/tool/gemini"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
