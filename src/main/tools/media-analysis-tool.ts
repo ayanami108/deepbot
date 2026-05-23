@@ -36,7 +36,7 @@ function getToolConfig(configStore: SystemConfigStore): { apiKey: string; apiUrl
 
   // 仅 DeepBot 供应商可用
   if ((modelConfig.providerType as string) !== 'deepbot') {
-    throw new Error('多媒体分析为 DeepBot 供应商专用工具。其他供应商请创建 Skill 实现相同功能。');
+    throw new Error('图片/视频分析为 DeepBot 供应商专属工具。如需在其他供应商下使用类似功能，请安装对应的 Skill（如视觉分析 Skill）来实现。');
   }
 
   if (!modelConfig.apiKey || !modelConfig.apiKey.trim()) {

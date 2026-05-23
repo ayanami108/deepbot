@@ -45,11 +45,18 @@ export const PROVIDER_PRESETS = {
     apiType: 'openai-completions',
   },
   custom: {
-    name: '自定义',
-    baseUrl: '',
+    name: 'OpenAI 兼容',
+    baseUrl: 'https://api.openai.com/v1',
     defaultModelId: '',
     defaultModelId2: '',  // 快速模型
     apiType: 'openai-completions',
+  },
+  anthropic: {
+    name: 'Anthropic',
+    baseUrl: 'https://api.anthropic.com',
+    defaultModelId: 'claude-sonnet-4-6',
+    defaultModelId2: 'claude-sonnet-4-6',  // 快速模型
+    apiType: 'anthropic-messages',
   },
 } as const;
 

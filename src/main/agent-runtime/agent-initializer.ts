@@ -17,14 +17,14 @@ import { SystemConfigStore } from '../database/system-config-store';
 export class AgentInitializer {
   private workspaceDir: string;
   private sessionId: string;
-  private model: Model<'openai-completions' | 'google-generative-ai'>;
+  private model: Model<'openai-completions' | 'google-generative-ai' | 'anthropic-messages'>;
   private apiKey: string;
   private configStore: SystemConfigStore;
 
   constructor(
     workspaceDir: string,
     sessionId: string,
-    model: Model<'openai-completions' | 'google-generative-ai'>,
+    model: Model<'openai-completions' | 'google-generative-ai' | 'anthropic-messages'>,
     apiKey: string
   ) {
     this.workspaceDir = workspaceDir;
@@ -467,7 +467,7 @@ export class AgentInitializer {
         }
         
         const response = await originalFetch(input, init);
-        if (!response.ok && (url.includes('chat/completions') || url.includes(this.model.baseUrl || ''))) {
+        if (!response.ok && (url.includes('chat/completions') || url.includes('/v1/messages') || url.includes(this.model.baseUrl || ''))) {
           console.error(`🌐 API 错误: ${response.status} ${response.statusText} - ${url}`);
           try {
             const cloned = response.clone();

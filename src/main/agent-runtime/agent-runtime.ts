@@ -108,7 +108,7 @@ export class AgentRuntime {
     }
     
     // 🔥 根据配置的 apiType 创建正确的模型对象
-    let model: Model<'openai-completions' | 'google-generative-ai'>;
+    let model: Model<'openai-completions' | 'google-generative-ai' | 'anthropic-messages'>;
     
     // 计算合理的 maxTokens（通常是 contextWindow 的 1/4 到 1/2）
     const maxTokens = Math.floor((contextWindow || 64000) / 2)
@@ -131,6 +131,24 @@ export class AgentRuntime {
           cacheWrite: 0,
         },
       } as Model<'google-generative-ai'>;
+    } else if (this.config.apiType === 'anthropic-messages') {
+      model = {
+        api: 'anthropic-messages',
+        id: this.config.modelId,
+        name: this.config.modelName,
+        provider: this.config.providerName,
+        input: ['text', 'image'],
+        reasoning: false,
+        baseUrl: this.config.baseUrl,
+        contextWindow: contextWindow || 200000,
+        maxTokens: maxTokens,
+        cost: {
+          input: 0,
+          output: 0,
+          cacheRead: 0,
+          cacheWrite: 0,
+        },
+      } as Model<'anthropic-messages'>;
     } else {
       model = {
         api: 'openai-completions',

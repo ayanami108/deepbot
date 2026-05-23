@@ -11,7 +11,7 @@ import type { Model } from '@mariozechner/pi-ai';
 export interface AgentRuntimeConfig {
   workspaceDir: string;
   sessionId: string;
-  model: Model<'openai-completions' | 'google-generative-ai'>;
+  model: Model<'openai-completions' | 'google-generative-ai' | 'anthropic-messages'>;
   apiKey: string;
   baseUrl: string;
   maxConcurrentSubAgents: number;

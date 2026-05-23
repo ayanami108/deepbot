@@ -13,7 +13,7 @@ import { ApiKeyHelpModal } from './ApiKeyHelpModal';
 import { getLanguage } from '../../i18n';
 
 interface ModelConfig {
-  providerType: 'deepbot' | 'gemini' | 'custom';
+  providerType: 'deepbot' | 'gemini' | 'custom' | 'anthropic';
   providerId: string;
   providerName: string;
   baseUrl: string;
@@ -124,7 +124,7 @@ export function ModelConfig({ onClose, tabId }: ModelConfigProps) {
   };
 
   // 处理提供商类型变化
-  const handleProviderTypeChange = (providerType: 'deepbot' | 'gemini' | 'custom') => {
+  const handleProviderTypeChange = (providerType: 'deepbot' | 'gemini' | 'custom' | 'anthropic') => {
     const preset = PROVIDER_PRESETS[providerType];
     
     setConfig({
@@ -281,19 +281,18 @@ export function ModelConfig({ onClose, tabId }: ModelConfigProps) {
         </label>
         <select
           value={config.providerType}
-          onChange={(e) => handleProviderTypeChange(e.target.value as 'deepbot' | 'gemini' | 'custom')}
+          onChange={(e) => handleProviderTypeChange(e.target.value as 'deepbot' | 'gemini' | 'custom' | 'anthropic')}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <option value="deepbot">{lang === 'zh' ? 'DeepBot（推荐）' : 'DeepBot (Recommended)'}</option>
-          <option value="gemini">Google Gemini</option>
-          <option value="custom">{lang === 'zh' ? '自定义（OpenAI 兼容）' : 'Custom (OpenAI Compatible)'}</option>
+          <option value="custom">{lang === 'zh' ? 'OpenAI 兼容' : 'OpenAI Compatible'}</option>
+          <option value="gemini">{lang === 'zh' ? 'Google Gemini 兼容' : 'Google Gemini Compatible'}</option>
+          <option value="anthropic">{lang === 'zh' ? 'Anthropic 兼容' : 'Anthropic Compatible'}</option>
         </select>
         <p className="mt-1 text-xs text-gray-500">
-          {lang === 'zh' ? '选择预设提供商或自定义配置' : 'Select a preset provider or customize'}
+          {lang === 'zh' ? '选择 API 接口格式' : 'Select API format'}
         </p>
       </div>
-
-      {/* API 类型（自定义模式固定为 OpenAI 兼容） */}
 
       {/* API 地址 */}
       <div>
@@ -304,12 +303,22 @@ export function ModelConfig({ onClose, tabId }: ModelConfigProps) {
           type="text"
           value={config.baseUrl}
           onChange={(e) => setConfig({ ...config, baseUrl: e.target.value })}
-          placeholder="https://api.example.com/v1"
+          placeholder={
+            config.providerType === 'anthropic'
+              ? 'https://api.anthropic.com'
+              : config.providerType === 'gemini'
+              ? 'https://generativelanguage.googleapis.com/v1beta'
+              : 'https://api.example.com/v1'
+          }
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <p className="mt-1 text-xs text-gray-500">
-          {config.providerType === 'custom' 
-            ? (lang === 'zh' ? '输入兼容 OpenAI API 或 Google Generative AI 格式的地址' : 'Enter an OpenAI API or Google Generative AI compatible URL')
+          {config.providerType === 'anthropic'
+            ? (lang === 'zh' ? '输入 Anthropic 兼容的 API 地址，不含 /v1/messages（如 https://api.anthropic.com）' : 'Enter Anthropic-compatible API URL without /v1/messages (e.g. https://api.anthropic.com)')
+            : config.providerType === 'gemini'
+            ? (lang === 'zh' ? '输入 Google Generative AI 格式的地址' : 'Enter Google Generative AI compatible URL')
+            : config.providerType === 'custom'
+            ? (lang === 'zh' ? '输入 OpenAI 兼容的 API 地址（如 https://api.openai.com/v1）' : 'Enter OpenAI-compatible API URL (e.g. https://api.openai.com/v1)')
             : (lang === 'zh' ? '预设提供商的 API 地址（可修改）' : 'Preset provider API URL (editable)')}
         </p>
       </div>
@@ -396,6 +405,8 @@ export function ModelConfig({ onClose, tabId }: ModelConfigProps) {
             placeholder={
               config.providerType === 'gemini'
                 ? 'gemini-3-pro-preview'
+                : config.providerType === 'anthropic'
+                ? 'claude-sonnet-4-6'
                 : 'model-id'
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -403,7 +414,9 @@ export function ModelConfig({ onClose, tabId }: ModelConfigProps) {
         )}
         <p className="mt-1 text-xs text-gray-500">
           {config.providerType === 'deepbot' && (lang === 'zh' ? '推荐 DeepSeek V4 模型，从列表选择或输入自定义模型 ID' : 'DeepSeek V4 models recommended. Select from the list or enter a custom model ID')}
-          {config.providerType === 'custom' && (lang === 'zh' ? '输入主模型 ID' : 'Enter the primary model ID')}
+          {config.providerType === 'custom' && (lang === 'zh' ? '输入 OpenAI 兼容的模型 ID' : 'Enter OpenAI-compatible model ID')}
+          {config.providerType === 'anthropic' && (lang === 'zh' ? '输入 Claude 模型 ID（如 claude-sonnet-4-6）' : 'Enter Claude model ID (e.g. claude-sonnet-4-6)')}
+          {config.providerType === 'gemini' && (lang === 'zh' ? '输入 Gemini 模型 ID' : 'Enter Gemini model ID')}
         </p>
       </div>
 
@@ -425,6 +438,8 @@ export function ModelConfig({ onClose, tabId }: ModelConfigProps) {
           placeholder={
             config.providerType === 'gemini' 
               ? 'AIza...' 
+              : config.providerType === 'anthropic' || config.apiType === 'anthropic-messages'
+              ? 'sk-...'
               : 'sk-...'
           }
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -432,6 +447,8 @@ export function ModelConfig({ onClose, tabId }: ModelConfigProps) {
         <p className="mt-1 text-xs text-gray-500">
           {config.providerType === 'gemini' 
             ? (lang === 'zh' ? 'Google AI Studio API Key（以 AIza 开头）将加密存储在本地' : 'Google AI Studio API Key (starts with AIza) will be encrypted and stored locally')
+            : config.providerType === 'anthropic' || config.apiType === 'anthropic-messages'
+            ? (lang === 'zh' ? 'Anthropic API Key（用于 x-api-key 请求头）将加密存储在本地' : 'Anthropic API Key (used in x-api-key header) will be encrypted and stored locally')
             : (lang === 'zh' ? 'API 密钥将加密存储在本地' : 'API key will be encrypted and stored locally')}
         </p>
       </div>

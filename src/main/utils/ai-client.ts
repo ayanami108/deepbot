@@ -111,6 +111,35 @@ export async function callAI(
         ...(maxTokens ? { maxOutputTokens: maxTokens } : {}),
       },
     });
+  } else if (apiType === 'anthropic-messages') {
+    // Anthropic Messages 格式
+    const base = (baseUrl || 'https://api.anthropic.com').replace(/\/$/, '');
+    // 智能拼接 URL：如果 baseUrl 已经包含 /v1/messages 或 /v1，则不重复添加
+    if (base.endsWith('/v1/messages')) {
+      url = base;
+    } else if (base.endsWith('/v1')) {
+      url = `${base}/messages`;
+    } else {
+      url = `${base}/v1/messages`;
+    }
+    headers = {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    };
+    // 提取 system 消息
+    const systemMsg = messages.find(m => m.role === 'system');
+    const nonSystemMessages = messages.filter(m => m.role !== 'system').map(m => ({
+      role: m.role,
+      content: m.content,
+    }));
+    body = JSON.stringify({
+      model: modelId,
+      messages: nonSystemMessages,
+      ...(systemMsg ? { system: systemMsg.content } : {}),
+      temperature,
+      ...(maxTokens ? { max_tokens: maxTokens } : { max_tokens: 4096 }),
+    });
   } else {
     // OpenAI 兼容格式
     const base = (baseUrl || 'https://api.openai.com/v1').replace(/\/$/, '');
@@ -157,6 +186,14 @@ export async function callAI(
           .map((p: any) => p.text)
           .join('');
       }
+    } else if (apiType === 'anthropic-messages') {
+      // Anthropic Messages 格式
+      if (result.content && Array.isArray(result.content)) {
+        responseText = result.content
+          .filter((block: any) => block.type === 'text')
+          .map((block: any) => block.text)
+          .join('');
+      }
     } else {
       // OpenAI 格式
       responseText = result.choices?.[0]?.message?.content || '';
@@ -172,11 +209,20 @@ export async function callAI(
     // 提取 usage
     let usage = { promptTokens: 0, completionTokens: 0, totalTokens: 0 };
     if (result.usage) {
-      usage = {
-        promptTokens: result.usage.prompt_tokens || 0,
-        completionTokens: result.usage.completion_tokens || 0,
-        totalTokens: result.usage.total_tokens || 0,
-      };
+      if (apiType === 'anthropic-messages') {
+        // Anthropic 格式
+        usage = {
+          promptTokens: result.usage.input_tokens || 0,
+          completionTokens: result.usage.output_tokens || 0,
+          totalTokens: (result.usage.input_tokens || 0) + (result.usage.output_tokens || 0),
+        };
+      } else {
+        usage = {
+          promptTokens: result.usage.prompt_tokens || 0,
+          completionTokens: result.usage.completion_tokens || 0,
+          totalTokens: result.usage.total_tokens || 0,
+        };
+      }
     } else if (result.usageMetadata) {
       // Gemini 格式
       usage = {

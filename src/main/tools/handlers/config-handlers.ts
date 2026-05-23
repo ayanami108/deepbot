@@ -160,7 +160,7 @@ export async function handleSetWorkspaceConfig(
  */
 export async function handleSetModelConfig(
   params: Partial<{
-    providerType: 'qwen' | 'deepseek' | 'gemini' | 'minimax' | 'custom';
+    providerType: 'qwen' | 'deepseek' | 'gemini' | 'minimax' | 'custom' | 'anthropic';
     providerId: string;
     providerName: string;
     baseUrl: string;

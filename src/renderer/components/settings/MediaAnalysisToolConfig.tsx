@@ -24,6 +24,7 @@ export function MediaAnalysisToolConfig({ onClose }: MediaAnalysisToolConfigProp
   const [model, setModel] = useState('qwen3.5-35b-a3b');
   const [showDropdown, setShowDropdown] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeepBot, setIsDeepBot] = useState(true);
   const hasLoadedRef = React.useRef(false);
 
   useEffect(() => {
@@ -38,6 +39,11 @@ export function MediaAnalysisToolConfig({ onClose }: MediaAnalysisToolConfigProp
       if (result.success && result.config?.model) {
         setModel(result.config.model);
       }
+
+      // 检查主模型是否为 DeepBot
+      const modelResult = await api.getModelConfig();
+      const modelConfig = (modelResult.data || modelResult)?.config;
+      setIsDeepBot(modelConfig?.providerType === 'deepbot');
     } catch (error) {
       console.error('加载多媒体分析工具配置失败:', error);
     }
@@ -79,29 +85,47 @@ export function MediaAnalysisToolConfig({ onClose }: MediaAnalysisToolConfigProp
         {/* 说明 */}
         <div style={{
           padding: '12px 14px',
-          background: 'rgba(59, 130, 246, 0.05)',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
+          background: isDeepBot ? 'rgba(59, 130, 246, 0.05)' : 'rgba(245, 158, 11, 0.05)',
+          border: `1px solid ${isDeepBot ? 'rgba(59, 130, 246, 0.2)' : 'rgba(245, 158, 11, 0.3)'}`,
           borderRadius: '6px',
           fontSize: '12px',
           color: 'var(--settings-text-dim)',
           lineHeight: '1.8',
           marginBottom: '16px',
         }}>
-          <div style={{ fontWeight: 600, color: 'var(--settings-accent)', marginBottom: '4px' }}>
-            {lang === 'zh' ? '💡 使用说明' : '💡 Usage Notes'}
+          <div style={{ fontWeight: 600, color: isDeepBot ? 'var(--settings-accent)' : '#d97706', marginBottom: '4px' }}>
+            {isDeepBot
+              ? (lang === 'zh' ? '💡 使用说明' : '💡 Usage Notes')
+              : (lang === 'zh' ? '⚠️ DeepBot 供应商专属' : '⚠️ DeepBot Provider Only')}
           </div>
           {lang === 'zh' ? (
-            <>
-              • 此工具复用主模型的 API Key，仅在主模型为 <strong>DeepBot</strong> 供应商时可用<br />
-              • 支持图片格式：jpg、png、gif、webp、bmp、tiff<br />
-              • 支持视频格式：mp4、mov、avi、mkv、webm
-            </>
+            isDeepBot ? (
+              <>
+                • 此工具复用主模型的 API Key，仅在主模型为 <strong>DeepBot</strong> 供应商时可用<br />
+                • 支持图片格式：jpg、png、gif、webp、bmp、tiff<br />
+                • 支持视频格式：mp4、mov、avi、mkv、webm
+              </>
+            ) : (
+              <>
+                • 当前主模型非 DeepBot 供应商，此工具不可用<br />
+                • 如需图片/视频分析功能，请安装对应的 <strong>Skill</strong> 来实现<br />
+                • 或将主模型切换为 DeepBot 供应商
+              </>
+            )
           ) : (
-            <>
-              • This tool reuses the main model's API Key, only available when the main model provider is <strong>DeepBot</strong><br />
-              • Supported image formats: jpg, png, gif, webp, bmp, tiff<br />
-              • Supported video formats: mp4, mov, avi, mkv, webm
-            </>
+            isDeepBot ? (
+              <>
+                • This tool reuses the main model's API Key, only available when the main model provider is <strong>DeepBot</strong><br />
+                • Supported image formats: jpg, png, gif, webp, bmp, tiff<br />
+                • Supported video formats: mp4, mov, avi, mkv, webm
+              </>
+            ) : (
+              <>
+                • Main model is not DeepBot provider, this tool is unavailable<br />
+                • To use image/video analysis, please install a corresponding <strong>Skill</strong><br />
+                • Or switch the main model to DeepBot provider
+              </>
+            )
           )}
         </div>
       </div>
@@ -119,17 +143,20 @@ export function MediaAnalysisToolConfig({ onClose }: MediaAnalysisToolConfigProp
             onFocus={() => setShowDropdown(true)}
             onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
             placeholder="qwen3.5-35b-a3b"
-            className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={!isDeepBot}
+            className="w-full px-3 py-2 pr-8 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
-          <span
-            onClick={() => setShowDropdown(!showDropdown)}
-            style={{
-              position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
-              cursor: 'pointer', color: 'var(--settings-text-dim, #999)', fontSize: '10px',
-              pointerEvents: 'auto',
-            }}
-          >▼</span>
-          {showDropdown && (
+          {isDeepBot && (
+            <span
+              onClick={() => setShowDropdown(!showDropdown)}
+              style={{
+                position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)',
+                cursor: 'pointer', color: 'var(--settings-text-dim, #999)', fontSize: '10px',
+                pointerEvents: 'auto',
+              }}
+            >▼</span>
+          )}
+          {showDropdown && isDeepBot && (
             <ul style={{
               position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 10,
               background: 'var(--settings-bg, #fff)', border: '1px solid var(--settings-border, #d1d5db)',
@@ -165,8 +192,8 @@ export function MediaAnalysisToolConfig({ onClose }: MediaAnalysisToolConfigProp
       <div className="flex justify-end pt-4 border-t">
         <button
           onClick={handleSave}
-          disabled={isSaving}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 transition-colors"
+          disabled={isSaving || !isDeepBot}
+          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition-colors"
         >
           {isSaving
             ? (lang === 'zh' ? '保存中...' : 'Saving...')

@@ -33,12 +33,12 @@ export interface WorkspaceSettings {
  * 模型配置
  */
 export interface ModelConfig {
-  providerType: 'qwen' | 'deepseek' | 'gemini' | 'minimax' | 'custom'; // 提供商类型（用于 UI 下拉选择）
+  providerType: 'qwen' | 'deepseek' | 'gemini' | 'minimax' | 'custom' | 'anthropic'; // 提供商类型（用于 UI 下拉选择）
   providerId: string;      // 提供商 ID
   providerName: string;    // 提供商名称
   baseUrl: string;         // API 地址
   modelId: string;         // 模型 ID（主模型）
-  apiType: string;         // API 类型（'openai-completions' | 'google-generative-ai'）
+  apiType: string;         // API 类型（'openai-completions' | 'google-generative-ai' | 'anthropic-messages'）
   modelId2?: string;       // 模型 ID 2（快速模型，选填，用于轻量级任务）
   apiKey: string;          // API Key（加密存储）
   contextWindow?: number;  // 上下文窗口大小（tokens）

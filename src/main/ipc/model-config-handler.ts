@@ -159,6 +159,22 @@ export function registerModelConfigHandlers(): void {
             cacheRead: 0,
             cacheWrite: 0,
           },
+        } : apiType === 'anthropic-messages' ? {
+          api: 'anthropic-messages' as const,
+          id: request.config.modelId,
+          name: request.config.modelId,
+          provider: request.config.providerId || 'anthropic',
+          input: ['text', 'image'] as const,
+          reasoning: false,
+          baseUrl: request.config.baseUrl,
+          contextWindow: 200000,
+          maxTokens: 8192,
+          cost: {
+            input: 0,
+            output: 0,
+            cacheRead: 0,
+            cacheWrite: 0,
+          },
         } : {
           api: 'openai-completions' as const,
           id: request.config.modelId,

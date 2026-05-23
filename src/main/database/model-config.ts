@@ -34,7 +34,9 @@ function getModelConfigFromEnv(): ModelConfig | null {
   const providerName = process.env.AI_PROVIDER_NAME || '自定义';
 
   // 根据 apiType 推断 providerType
-  const providerType = apiType === 'google-generative-ai' ? 'gemini' : 'custom';
+  const providerType = apiType === 'google-generative-ai' ? 'gemini' 
+    : apiType === 'anthropic-messages' ? 'anthropic' 
+    : 'custom';
 
   console.info('[ModelConfig] 使用环境变量中的模型配置（数据库中无配置）');
 
